@@ -9,6 +9,12 @@
 # Layout requirement: this repo (sasayaki-core/) must live as a SUBFOLDER named "Sasayaki"
 # directly inside your library folder — e.g. <library>/Sasayaki/. That's what lets the app
 # resolve its own parent as the library root. See INSTALL.md.
+#
+# Your library folder also needs two EMPTY sibling folders, "_data" and "_wiki", created
+# before first run (INSTALL.md step 1). They hold the app's own state (tags, thumbnail
+# cache, hide/delete records) -- never your original audio -- and are shadow-mounted
+# read-write for the same OCI reason Sasayaki/ is: a bind-mount target must already exist
+# as a real directory under the read-only library mount, or Docker can't attach to it.
 
 services:
   sasayaki:
@@ -20,8 +26,11 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      # library, READ-ONLY. The app can never modify an original file.
+      # library, READ-ONLY. The app can never modify or delete an original audio file.
       - "${SASAYAKI_LIBRARY:?Set SASAYAKI_LIBRARY in .env to your media library folder}:/media:ro"
       # this app dir, read-write, shadow-mounted over the ro library so cache/log writes succeed.
       - ".:/media/Sasayaki:rw"
+      # app-owned state (tags/thumbs/hide-delete records) -- read-write for the same reason.
+      - "${SASAYAKI_LIBRARY}/_data:/media/_data:rw"
+      - "${SASAYAKI_LIBRARY}/_wiki:/media/_wiki:rw"
     restart: unless-stopped

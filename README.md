@@ -37,7 +37,8 @@ just picks it up. Nothing about running the core requires the worker to exist.
 | Browse / play your library | ✅ | |
 | Tag / genre filtering | ✅ | |
 | DLsite metadata display | ✅ | |
-| Sandbox / core realm split, library management | ✅ | |
+| Sandbox / core realm split, hide/unhide | ✅ | |
+| Delete/restore (moves the audio file) | ⚙️ *(opt-in — needs a `:rw` library mount, see INSTALL.md)* | |
 | Subtitle playback (bilingual drawer) | ✅ *(if `.ja.srt`/`.en.srt` already exist)* | |
 | Transcription (ASR) | | 🔧 |
 | JA→EN translation | | 🔧 |

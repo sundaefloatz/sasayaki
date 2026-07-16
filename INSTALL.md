@@ -34,6 +34,23 @@ If you'd rather not nest it, clone this repo anywhere and instead **bind-mount i
       - "/path/to/wherever/you/cloned/this:/media/Sasayaki:rw"
 ```
 
+## 1b. Create two empty folders next to it
+
+```
+<your-library>/
+├── CreatorA/
+├── CreatorB/
+├── Sasayaki/
+├── _data/      <- create this, empty
+└── _wiki/      <- create this, empty
+```
+
+The app's own state (thumbnail cache, tag index, hide/delete records — never your original
+audio) lives here. Your library folder is mounted **read-only** so a bug can never touch an
+original file; `_data/` and `_wiki/` are shadow-mounted read-write for exactly the same reason
+`Sasayaki/` is, and for the same technical reason (a bind-mount target must already exist as a
+real directory before Docker can attach to it) — they just need to exist, empty, before first run.
+
 ## 2. Configure the library path
 
 ```bash
@@ -55,7 +72,10 @@ docker compose logs -f       # watch startup; Ctrl-C to stop watching (container
 ## What to expect
 
 - Your creator folders show up as-is; audio plays directly.
-- Tags, DLsite metadata, and library-management (hide/unhide/delete/restore) work immediately.
+- Tags, DLsite metadata, and library-management **hide/unhide** work immediately.
+- **delete/restore** (which physically move an audio file into a trash folder) need write
+  access to your library, which is deliberately off by default for safety. To enable it,
+  change the library line in `docker-compose.yml` from `:ro` to `:rw`.
 - Subtitle playback works **only** for works that already have a `.ja.srt`/`.en.srt` sidecar —
   this core repo does not transcribe anything itself (see the main README's feature table).
 - Search-by-vibe, trigger timelines, wiki, and AI chat will show empty/absent — they need the
