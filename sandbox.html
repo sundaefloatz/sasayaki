@@ -1,0 +1,211 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sasayaki 囁き // sandbox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:"KozGo";src:url("fonts/KozGoPr6N-Regular.otf");font-weight:400;font-display:swap}
+@font-face{font-family:"KozGo";src:url("fonts/KozGoPr6N-Bold.otf");font-weight:700;font-display:swap}
+@font-face{font-family:"Klavika";src:url("fonts/klavika-bold.otf");font-weight:700;font-display:swap}
+:root{color-scheme:dark;
+  --bg:#181a1b;--surf:#1d1f20;--surf2:#232526;--line:rgba(255,255,255,.06);--line2:rgba(255,255,255,.11);
+  --txt:#e8e6e3;--muted:#9b958f;--dim:#5d5852;
+  --pk:#e4405f;--pk2:#ff7a99;--pk3:rgba(228,64,95,.14);
+  --green:#3fdc97;--amber:#f1c453;--blue:#5b8cff;
+  --r:8px;--ease:cubic-bezier(.16,1,.3,1);
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+  --body:"KozGo","Inter",system-ui,sans-serif;--logo:"Klavika","KozGo",sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font:14px/1.55 var(--body);overflow-x:hidden;min-height:100dvh;-webkit-font-smoothing:antialiased}
+#amb{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#amb .wash{position:absolute;inset:-5%;background:radial-gradient(ellipse 60% 40% at 20% -5%,var(--pk3),transparent 60%),radial-gradient(ellipse 50% 35% at 90% 100%,rgba(228,64,95,.08),transparent 60%)}
+#amb .dots{position:absolute;inset:0;opacity:.35;background-image:radial-gradient(circle,var(--a04) 1px,transparent 1.5px);background-size:22px 22px}
+a{color:var(--pk2);text-decoration:none}
+.topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:0 20px}
+.topinner{max-width:1080px;margin:0 auto;height:54px;display:flex;align-items:center;gap:14px;position:relative;z-index:1}
+.logo{font:700 16px var(--logo);letter-spacing:-.3px;white-space:nowrap;color:var(--txt)}
+.logo span{color:var(--pk)}
+.topnav{display:flex;gap:2px;margin-left:8px;flex-wrap:wrap}
+.topnav a{font:11px var(--mono);padding:6px 11px;border-radius:var(--r);color:var(--muted);transition:.15s}
+.topnav a:hover{color:var(--pk2);background:var(--pk3)}
+.topnav a.on{color:var(--pk2);background:var(--pk3)}
+.wrap{max-width:1080px;margin:0 auto;padding:24px 20px 80px;position:relative;z-index:1}
+h1{font:700 25px var(--logo);letter-spacing:-.4px;margin-bottom:4px}
+h1 .jp{color:var(--pk);font-weight:400}
+.lede{color:var(--muted);font-size:13px;margin-bottom:18px;max-width:70ch}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.chip{font:11px var(--mono);padding:7px 12px;border-radius:var(--r);background:var(--surf);border:1px solid var(--line);color:var(--muted);display:inline-flex;align-items:center;gap:7px}
+.chip b{color:var(--txt);font-weight:700}
+.chip .d{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+.chip.ok .d{background:var(--green);box-shadow:0 0 7px rgba(63,220,151,.6)}
+.chip.no .d{background:var(--amber)}
+.chip.run .d{background:var(--pk);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.sp{flex:1}
+.btn{font:600 12px var(--mono);padding:9px 15px;border-radius:var(--r);border:1px solid var(--line2);background:var(--surf2);color:var(--txt);cursor:pointer;transition:.15s}
+.btn:hover{border-color:var(--pk);color:var(--pk2)}
+.btn.primary{background:var(--pk);border-color:var(--pk);color:#fff}.btn.primary:hover{background:var(--pk2);color:#fff}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px}
+.stat{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.stat .n{font:700 26px var(--mono);letter-spacing:-1px}
+.stat .k{font:10px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:4px}
+.stat.merge .n{color:var(--blue)}.stat.new .n{color:var(--pk)}.stat.roster .n{color:var(--green)}
+.vh{font:11px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:24px 0 12px;display:flex;align-items:center;gap:9px}
+.vh::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+.merges{display:flex;flex-direction:column;gap:6px}
+.mrow{display:flex;align-items:center;gap:10px;font:12px var(--mono);background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:8px 12px;transition:border-color .15s}
+.mrow:hover{border-color:var(--line2)}
+.mrow .v{color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrow .ar{color:var(--dim);flex:none}
+.mrow .c{color:var(--green);font-weight:600;flex:none}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:11px}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:13px 14px;transition:transform .25s var(--ease),border-color .2s,box-shadow .2s}
+.card:hover{transform:translateY(-3px);border-color:var(--pk3);box-shadow:0 8px 22px rgba(0,0,0,.5),0 0 18px var(--pk3)}
+/* pfp hook: a queued /sandbox/pfp route + Get-SandboxWikiIndex avatar/source fields land after this
+   round settles. The card leaves a clean slot — a .pfp above .nm renders when present, hides otherwise. */
+.card .pfp{width:40px;height:40px;border-radius:50%;object-fit:cover;object-position:center top;margin-bottom:9px;display:none;border:1px solid var(--line)}
+.card .pfp.on{display:block}
+.card .srclink{font:9px var(--mono);color:var(--pk2);text-decoration:none;margin-top:6px;display:none}
+.card .srclink.on{display:inline-block}
+.card .nm{font:600 13px var(--body);color:var(--txt);margin-bottom:3px;word-break:break-word}
+.card .g{font:10px var(--mono);color:var(--dim);margin-bottom:9px}
+.card .rs{display:flex;gap:8px}
+.tagp{flex:1;font:10px var(--mono);padding:5px 8px;border-radius:7px;background:transparent;border:1px solid transparent;color:var(--dim);display:flex;align-items:center;gap:6px;transition:.15s}
+.tagp .d{width:7px;height:7px;border-radius:50%;background:var(--dim);flex:none}
+.tagp.has{color:var(--txt)}.tagp.has.src .d{background:var(--green)}.tagp.has.prof .d{background:var(--blue)}
+.pipe{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:18px}
+.pipe h3{font:11px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:13px;display:flex;gap:9px;align-items:center}
+.pipe h3 .live{margin-left:auto;font:10px var(--mono);color:var(--green);display:none}
+.pipe h3 .live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:5px;animation:pulse 1.2s infinite}
+.pstage{display:flex;align-items:center;gap:12px;margin:9px 0}
+.pstage .nm{width:104px;flex:none;font:12px var(--mono);color:var(--txt)}
+.pstage .track{flex:1;height:9px;background:var(--surf2);border-radius:6px;overflow:hidden}
+.pstage .fill{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--pk),var(--pk2));border-radius:6px;transition:width .8s var(--ease)}
+.pstage .ct{width:78px;flex:none;text-align:right;font:11px var(--mono);color:var(--muted)}
+.pstage.done .fill{background:var(--green)}.pstage.done .ct{color:var(--green)}
+.pnow{margin-top:12px;font:11px var(--mono);color:var(--dim);border-top:1px solid var(--line);padding-top:10px;display:flex;gap:8px;align-items:center;white-space:nowrap;overflow:hidden}
+.pnow .cr{width:7px;height:12px;background:var(--pk);flex:none;animation:pulse 1s step-end infinite}
+.pnow .f{overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
+.log{font:11px/1.7 var(--mono);color:var(--dim);background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;white-space:pre-wrap}
+.note{font-size:11.5px;color:var(--dim);margin-top:20px;line-height:1.6}
+.note b{color:var(--muted)}
+.empty{color:var(--dim);font:12px var(--mono);padding:8px 2px}
+</style></head><body>
+<div id="amb"><div class="wash"></div><div class="dots"></div></div>
+<div class="topbar"><div class="topinner">
+  <a class="logo" href="/sandbox" data-realm-home style="text-decoration:none">Sasayaki<span>//SANDBOX</span></a>
+  <div id="realmnav" data-theme-host></div><script src="/realm.js"></script>
+</div></div>
+
+<div class="wrap">
+  <h1>Sandbox <span class="jp">砂場</span></h1>
+  <div class="lede">The low-stakes testbed — YouTube pulls quarantined out of the <b>Core</b> library. We shake out
+    the full pipeline here (transcribe → translate → study → research) before it ever touches your curated
+    collection. Research output is private: this page shows <b>counts and byte sizes</b> only.</div>
+
+  <div class="pipe">
+    <h3>pipeline · yt_ingest <span class="live" id="pLive">● transcribing</span></h3>
+    <div id="pstages"></div>
+    <div class="pnow" id="pnow" style="display:none"><span class="cr"></span><span style="color:var(--pk)">now</span><span class="f" id="pnowf"></span></div>
+  </div>
+
+  <div class="bar">
+    <span class="chip" id="llmChip"><span class="d"></span><span id="llmTxt">checking LLM…</span></span>
+    <span class="chip" id="runChip" style="display:none"><span class="d"></span>sandbox running…</span>
+    <span class="sp"></span>
+    <button class="btn" id="btnTriage">Re-triage</button>
+    <button class="btn primary" id="btnFast">⚡ Fast socials sweep</button>
+    <button class="btn" id="btnDeep" disabled>🧠 Deep dossiers</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat roster"><div class="n" id="sRoster">–</div><div class="k">known roster</div></div>
+    <div class="stat merge"><div class="n" id="sMerge">–</div><div class="k">variants merged</div></div>
+    <div class="stat new"><div class="n" id="sNew">–</div><div class="k">new creators</div></div>
+  </div>
+
+  <div class="vh">alias merges &middot; variant → canonical</div>
+  <div class="merges" id="merges"></div>
+
+  <div class="vh">new creators &middot; research queue</div>
+  <div class="grid" id="newgrid"></div>
+
+  <div class="vh">research log &middot; sizes only</div>
+  <div class="log" id="log">—</div>
+
+  <div class="note">🔒 <b>Privacy:</b> the fast sweep (<b>discover_sources</b>, keyless DuckDuckGo, no GPU) and the deep pass
+    (<b>research_agent</b>, local LLM) write into the vault locally. This page and the dashboard only read
+    <b>file sizes</b> — the dossiers stay private to the local AI. Deep dossiers need a model loaded in LM&nbsp;Studio.</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+let BUSY=false;
+
+async function poll(){
+  let d; try{ d=await (await fetch('/sandbox.json',{cache:'no-store'})).json(); }catch(e){ return; }
+  const llm=d.llm||{up:false,ollama:false,models:[]};
+  const lc=$('llmChip'), lt=$('llmTxt');
+  const anyLLM = llm.ollama||llm.up;
+  lc.className='chip '+(anyLLM?'ok':'no');
+  lt.textContent = llm.ollama ? 'Ollama ✓ translate+research' : (llm.up?('LM Studio: '+(llm.models[0]||'loaded')):'no LLM backend');
+  $('btnDeep').disabled = !anyLLM || d.running;
+
+  // pipeline progress (the 5 sandbox stages)
+  const pp=d.pipeline||{}; const N=pp.files||0;
+  const stages=[['Transcribe','transcribe'],['Translate','translate'],['Study track','study'],['Research','research'],['Describe','describe']];
+  $('pstages').innerHTML=stages.map(([label,key])=>{
+    const v=pp[key]||0, pct=N?Math.min(100,Math.round(v/N*100)):0, done=N&&v>=N;
+    return '<div class="pstage'+(done?' done':'')+'"><span class="nm">'+label+'</span>'+
+      '<div class="track"><span class="fill" style="width:'+pct+'%"></span></div>'+
+      '<span class="ct">'+v+' / '+N+'</span></div>';
+  }).join('');
+  $('pLive').style.display=pp.txRunning?'inline':'none';
+  if(pp.txRunning && pp.now){ $('pnow').style.display='flex'; $('pnowf').textContent=pp.now.replace(/^.*[\\\/]/,''); }
+  else { $('pnow').style.display='none'; }
+  $('runChip').style.display=d.running?'':'none';
+  if(d.running){ $('runChip').className='chip run'; }
+  $('sRoster').textContent=(d.roster||[]).length;
+  $('sMerge').textContent=(d.merges||[]).length;
+  $('sNew').textContent=(d.new||[]).length;
+
+  $('merges').innerHTML=(d.merges&&d.merges.length)
+    ? d.merges.map(m=>`<div class="mrow"><span class="v">${esc(m.variant)}</span><span class="ar">→</span><span class="c">${esc(m.canonical)}</span></div>`).join('')
+    : '<div class="empty">none — no duplicate creators yet</div>';
+
+  $('newgrid').innerHTML=(d.new&&d.new.length)
+    ? d.new.map(n=>{
+        const g=n.guess?`closest: ${esc(n.guess)} ${n.score}`:'unrecognized';
+        const src=n.sources>0, prof=n.profile>0;
+        return `<div class="card">`+
+          (n.pfp?`<img class="pfp on" src="${esc(n.pfp)}" alt="" loading="lazy" onerror="this.classList.remove('on')">`:'')+
+          `<div class="nm">${esc(n.folder)}</div><div class="g">${g}</div>
+          <div class="rs">
+            <span class="tagp src ${src?'has':''}"><span class="d"></span>socials ${src?n.sources+'B':'—'}</span>
+            <span class="tagp prof ${prof?'has':''}"><span class="d"></span>dossier ${prof?n.profile+'B':'—'}</span>
+          </div>`+
+          (n.source?`<a class="srclink on" href="${esc(n.source)}" target="_blank" rel="noopener">source &#8599;</a>`:'')+
+          `</div>`;
+      }).join('')
+    : '<div class="empty">no new creators — run a triage</div>';
+
+  $('log').textContent=(d.log&&d.log.length)?d.log.join('\n'):'— no runs yet';
+}
+
+async function run(mode,btn){
+  const old=btn.textContent; btn.disabled=true; btn.textContent='starting…';
+  try{
+    const r=await (await fetch('/sandbox/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode})})).json();
+    btn.textContent = r.ok ? '✓ started' : ('✗ '+(r.error||'failed'));
+  }catch(e){ btn.textContent='✗ '+e; }
+  setTimeout(()=>{ btn.textContent=old; btn.disabled=false; poll(); }, 1800);
+}
+$('btnTriage').addEventListener('click',e=>run('triage',e.target));
+$('btnFast').addEventListener('click',e=>run('research',e.target));
+$('btnDeep').addEventListener('click',e=>run('deep',e.target));
+
+poll(); setInterval(poll,4000);
+</script>
+</body></html>

@@ -1,0 +1,27 @@
+# Sasayaki CPU-only core — the "point it at a library you already have" viewer.
+# No GPU, no models, no scrapers. ASR/translate/search/triggers degrade to empty/absent.
+#
+# Quickstart:
+#   1. Copy .env.example to .env and set SASAYAKI_LIBRARY to your media folder.
+#   2. docker compose up -d --build
+#   3. Open http://localhost:8080/library
+#
+# Layout requirement: this repo (sasayaki-core/) must live as a SUBFOLDER named "Sasayaki"
+# directly inside your library folder — e.g. <library>/Sasayaki/. That's what lets the app
+# resolve its own parent as the library root. See INSTALL.md.
+
+services:
+  sasayaki:
+    build:
+      context: .
+      dockerfile: _deploy/Dockerfile
+    image: sasayaki-core:latest
+    container_name: sasayaki-core
+    ports:
+      - "8080:8080"
+    volumes:
+      # library, READ-ONLY. The app can never modify an original file.
+      - "${SASAYAKI_LIBRARY:?Set SASAYAKI_LIBRARY in .env to your media library folder}:/media:ro"
+      # this app dir, read-write, shadow-mounted over the ro library so cache/log writes succeed.
+      - ".:/media/Sasayaki:rw"
+    restart: unless-stopped

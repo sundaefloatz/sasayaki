@@ -1,0 +1,533 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sasayaki Wiki // 囁き研究</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Shippori+Mincho:wght@500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  @font-face{font-family:"KozGo";src:url("fonts/KozGoPr6N-Regular.otf");font-weight:400;font-display:swap}
+  @font-face{font-family:"KozGo";src:url("fonts/KozGoPr6N-Medium.otf");font-weight:500;font-display:swap}
+  @font-face{font-family:"KozGo";src:url("fonts/KozGoPr6N-Bold.otf");font-weight:700;font-display:swap}
+  @font-face{font-family:"Rodin";src:url("fonts/FOT-RodinPro-DB.otf");font-weight:600;font-display:swap}
+  @font-face{font-family:"Ryumin";src:url("fonts/A-OTF-RyuminPro-Light.otf");font-weight:300;font-display:swap}
+  @font-face{font-family:"Klavika";src:url("fonts/klavika-bold.otf");font-weight:700;font-display:swap}
+  @font-face{font-family:"Klavika";src:url("fonts/klavika-medium.otf");font-weight:500;font-display:swap}
+  @font-face{font-family:"NanoLine";src:url("fonts/Y1NanoLine-HairlineDisplay.otf");font-weight:100;font-display:swap}
+  @font-face{font-family:"NocturnalSubway";src:url("fonts/Y1NocturnalSubway.otf");font-weight:400;font-display:swap}
+  @font-face{font-family:"Digitaldream";src:url("fonts/Digitaldream.ttf");font-weight:400;font-display:swap}
+  :root{color-scheme:dark;
+    --bg:#181a1b;--surface:#1d1f20;--surface2:#232526;--line:rgba(255,255,255,.06);--line2:rgba(255,255,255,.11);
+    --txt:#e8e6e3;--muted:#9b958f;--dim:#5d5852;
+    --pk:#e4405f;--pk2:#ff7a99;--pk3:rgba(228,64,95,.14);
+    --cyan:#e4405f;--teal:#ff7a99;--blue:#5b8cff;--purple:#8b7bff;--gold:#f5c518;
+    --r:8px;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+    --body:"Zen Kaku Gothic New","KozGo","Inter",system-ui,sans-serif;
+    --disp:"Shippori Mincho","Rodin","KozGo",serif;
+    --serif:"Ryumin",Georgia,serif;
+    --logo:"Klavika","KozGo",sans-serif;
+    --y2k:"NanoLine","Inter",sans-serif;
+    --subway:"NocturnalSubway","KozGo",sans-serif;
+    --lcd:"Digitaldream","JetBrains Mono",monospace;
+    --ease:cubic-bezier(.16,1,.3,1)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:14.5px/1.65 var(--body);overflow-x:hidden;min-height:100dvh;-webkit-font-smoothing:antialiased}
+  #amb{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  #amb .wash{position:absolute;inset:-5%;background:radial-gradient(ellipse 60% 40% at 20% -5%,var(--pk3),transparent 60%),radial-gradient(ellipse 50% 35% at 90% 100%,rgba(228,64,95,.08),transparent 60%)}
+  #amb .dots{position:absolute;inset:0;opacity:.35;background-image:radial-gradient(circle,var(--a04) 1px,transparent 1.5px);background-size:22px 22px}
+  a{color:var(--pk);text-decoration:none}a:hover{text-decoration:underline}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 22px 90px;position:relative;z-index:1}
+  .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);padding:13px 0;margin:-24px 0 14px;border-bottom:1px solid var(--line)}
+  .langsw{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .langsw b{font:10px var(--mono);padding:5px 9px;color:var(--muted);cursor:pointer;font-weight:700;transition:.2s;border:none;background:transparent;letter-spacing:.04em}
+  .langsw b:hover{color:var(--txt)}.langsw b.on{color:var(--pk2);background:var(--pk3)}
+  .logo{font-family:var(--logo);font-weight:700;font-size:20px;letter-spacing:-.4px;display:flex;align-items:center;gap:10px}
+  .logo .dot{width:9px;height:9px;border-radius:50%;background:var(--pk);box-shadow:0 0 16px var(--pk3)}
+  .logo b{color:var(--pk);font-weight:700}
+  .nav{margin-left:auto;display:flex;gap:6px}
+  .nav a{font:11px var(--mono);color:var(--muted);border:1px solid var(--line2);background:transparent;
+    padding:6px 11px;border-radius:var(--r);letter-spacing:.04em;transition:.15s}
+  .nav a:hover{color:var(--pk2);border-color:var(--pk);text-decoration:none}
+  /* hero */
+  .hero{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:26px 26px 22px;margin-bottom:22px;position:relative;overflow:hidden;box-shadow:0 0 40px var(--pk3)}
+  .hero h1{font-family:var(--disp);font-weight:600;font-size:27px;margin:0 0 6px;letter-spacing:-.4px}
+  .hero h1 span{background:linear-gradient(90deg,var(--pk),var(--pk2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{color:var(--muted);font-size:13.5px;margin:0 0 16px;max-width:640px}
+  .hstats{display:flex;gap:10px;flex-wrap:wrap}
+  .hstat{font:11px var(--mono);background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:8px 13px}
+  .hstat b{font-family:var(--y2k);color:var(--pk);font-size:20px;font-weight:100;letter-spacing:.05em}
+  .search{width:100%;margin:18px 0 22px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+    padding:12px 16px;color:var(--txt);font:14px var(--body);outline:none;transition:border-color .25s,box-shadow .25s}
+  .search:focus{border-color:var(--pk);box-shadow:0 0 0 2px var(--pk3)}
+  .search::placeholder{color:var(--dim)}
+  .sechead{font-family:var(--disp);font-weight:600;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin:6px 0 12px}
+  /* portal grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:14px}
+  .pcard{display:flex;align-items:center;gap:13px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 15px;cursor:pointer;transition:transform .25s var(--ease),box-shadow .25s,border-color .25s}
+  .pcard:hover{transform:translateY(-3px);border-color:var(--pk3);box-shadow:0 8px 22px rgba(0,0,0,.5),0 0 18px var(--pk3)}
+  .pbody{min-width:0}
+  .pav{border-radius:11px;flex:none;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;
+    font-family:var(--disp);font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4);
+    background:linear-gradient(135deg,hsl(var(--h,348) 70% 55%),hsl(var(--h2,338) 60% 42%))}
+  .pav img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .chead{display:flex;align-items:center;gap:17px;margin-bottom:20px}
+  .pcard .nm{font-family:var(--disp);font-weight:600;font-size:15px;margin-bottom:7px;line-height:1.3}
+  .pcard .meta{display:flex;gap:6px;flex-wrap:wrap}
+  .tagp{font:9.5px var(--mono);padding:3px 9px;border-radius:16px;background:transparent;color:var(--muted);letter-spacing:.04em;transition:.15s}
+  .tagp::before{content:'#';opacity:.5;margin-right:2px}
+  .tagp.c{color:var(--pk2);background:var(--pk3)}.tagp.t{color:var(--pk2);background:rgba(255,107,138,.08)}
+  /* creator + note views */
+  .crumb{font:11px var(--mono);color:var(--muted);margin-bottom:14px}
+  .crumb a{color:var(--pk)}.crumb b{color:var(--txt)}
+  .ctitle{font-family:var(--disp);font-weight:600;font-size:24px;letter-spacing:-.4px;margin:0 0 4px}
+  .csub{color:var(--muted);font:12px var(--mono);margin-bottom:20px}
+  .panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:22px 24px;margin-bottom:18px}
+  .panel.byai{border-color:var(--pk3);box-shadow:0 0 30px var(--pk3)}
+  .byai-badge{font:9.5px var(--mono);color:var(--pk);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+  .byai-badge .d{width:6px;height:6px;border-radius:50%;background:var(--pk);box-shadow:0 0 10px var(--pk)}
+  .worklist{display:flex;flex-direction:column;gap:2px}
+  .wrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:9px;border:1px solid transparent;transition:background .15s,border-color .15s}
+  .wrow:hover{background:var(--surface2);border-color:var(--line)}
+  .wrow .wt{flex:1;min-width:0;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+  .wrow .wt:hover{color:var(--pk)}
+  .wrow .wkb{font:10px var(--mono);color:var(--dim);flex:none}
+  .wbtn{font:10.5px var(--mono);border:1px solid var(--line2);background:transparent;color:var(--muted);
+    padding:5px 10px;border-radius:var(--r);cursor:pointer;flex:none;letter-spacing:.03em;white-space:nowrap;transition:.15s}
+  .wbtn:hover{color:var(--pk2);border-color:var(--pk)}
+  .wbtn.play{color:var(--pk2);border-color:var(--pk3)}.wbtn.play:hover{background:var(--pk3)}
+  /* rendered markdown prose */
+  /* DLsite products gallery */
+  .dlgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+  .dlcard{display:flex;gap:13px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:13px;transition:border-color .2s,box-shadow .2s}
+  .dlcard:hover{border-color:var(--pk3);box-shadow:0 0 18px var(--pk3)}
+  .dljak{width:86px;height:86px;flex:none;border-radius:var(--r);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;background:var(--surface2)}
+  .dljak img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .dlinit{font-family:var(--disp);font-weight:700;font-size:30px;color:var(--dim)}
+  .dlcard:not(.noimg) .dlinit{display:none}
+  .dlmeta{min-width:0;flex:1}
+  .dlcr{font:10px var(--mono);color:var(--pk);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dlti{font-family:var(--disp);font-weight:500;font-size:13px;line-height:1.35;margin-bottom:7px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+  .dlti:hover{color:var(--pk2)}
+  .dljak{cursor:pointer}
+  /* DLsite product preview modal (replaces the cramped <details> dropdowns) */
+  #dlmodal{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;padding:24px;
+    background:rgba(0,0,0,.66);backdrop-filter:blur(3px)}
+  #dlmodal.on{display:flex}
+  .dlmbox{position:relative;width:min(680px,100%);max-height:88vh;overflow:auto;background:var(--surface);
+    border:1px solid var(--line2);border-radius:16px;padding:24px;box-shadow:0 24px 70px rgba(0,0,0,.6),0 0 40px var(--pk3)}
+  .dlmx{position:absolute;top:14px;right:16px;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);
+    background:var(--surface2);color:var(--muted);cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center}
+  .dlmx:hover{color:var(--txt);border-color:var(--line2)}
+  .dlmhead{display:flex;gap:18px;margin-bottom:16px}
+  .dlmjak{width:132px;height:132px;flex:none;border-radius:10px;overflow:hidden;background:var(--surface2);position:relative}
+  .dlmjak img{width:100%;height:100%;object-fit:cover}
+  .dlminfo{min-width:0;flex:1}
+  .dlmcr{font:10px var(--mono);color:var(--pk);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+  .dlmti{font-family:var(--disp);font-weight:700;font-size:19px;line-height:1.28;margin-bottom:8px}
+  .dlmmeta{font:11px var(--mono);color:var(--muted);line-height:1.7}
+  .dlmgen{margin-top:9px;display:flex;flex-wrap:wrap;gap:5px}
+  .dlmgen .dlgch{font:10px var(--mono)}
+  .dlmsyn{margin:6px 0 14px;font-size:13px;line-height:1.7;white-space:pre-wrap;
+    border-top:1px solid var(--line);padding-top:14px}
+  .dlmsyn h4{font:10px var(--mono);text-transform:uppercase;letter-spacing:.12em;color:var(--dim);margin:0 0 8px}
+  .dlmtracks{border-top:1px solid var(--line);padding-top:12px}
+  .dlmtracks h4{font:10px var(--mono);text-transform:uppercase;letter-spacing:.12em;color:var(--dim);margin:0 0 8px}
+  .dlmtrk{list-style:none;padding:0;margin:0;font-size:12.5px}
+  .dlmtrk li{display:flex;align-items:center;gap:10px;padding:7px 9px;border-radius:8px;transition:background .15s}
+  .dlmtrk li:hover{background:var(--surface2)}
+  .dlmtrk a{color:var(--txt);text-decoration:none;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dlmtrk a:hover{color:var(--pk2)}
+  .dlmtrk .pn{font:10px var(--mono);color:var(--pk);flex:none;width:22px}
+  .dlmtrk .dltd{font:10px var(--mono);color:var(--dim);flex:none}
+  .dlmlink{display:inline-block;margin-top:14px;font:12px var(--mono);color:var(--pk2);text-decoration:none;
+    border:1px solid var(--pk3);border-radius:8px;padding:8px 14px}
+  .dlmlink:hover{background:var(--pk3)}
+  .dllinks a{font:11px var(--mono);color:var(--pk2);text-decoration:none}.dllinks a:hover{text-decoration:underline}
+  .dlabout{margin-top:8px}
+  .dlabout summary{font:10.5px var(--mono);color:var(--muted);cursor:pointer;list-style:none}
+  .dlabout summary:hover{color:var(--txt)}
+  .dlabout .prose{font-size:12px;line-height:1.6;margin-top:8px;max-height:320px;overflow:auto;white-space:pre-wrap}
+  .dltracks{margin:8px 0 2px}
+  .dltracks summary{font:10.5px var(--mono);color:var(--accent,var(--txt));cursor:pointer;list-style:none}
+  .dltracks summary:hover{filter:brightness(1.15)}
+  .dltrk{margin:8px 0 0;padding-left:22px;max-height:280px;overflow:auto;font-size:12px;line-height:1.5}
+  .dltrk li{margin:2px 0}
+  .dltrk a{color:var(--txt);text-decoration:none}
+  .dltrk a:hover{color:var(--accent,var(--txt));text-decoration:underline}
+  .dltd{color:var(--muted);font:10px var(--mono);margin-left:7px}
+  .dlcircles{margin:0 0 16px;font:12px var(--body);color:var(--muted);line-height:2}
+  .dlcircles b{color:var(--txt);font:10.5px var(--mono);text-transform:uppercase;letter-spacing:.06em;margin-right:6px}
+  .dlchip{display:inline-block;font:11px var(--mono);background:transparent;border:1px solid transparent;border-radius:16px;padding:3px 10px;margin:0 5px 5px 0;color:var(--pk2);transition:.15s}
+  .dlchip::before{content:'#';opacity:.5;margin-right:2px}
+  .dlchip.va{color:var(--purple)}
+  .vtbadge{position:absolute;top:5px;left:5px;font:700 8px var(--mono);letter-spacing:.08em;background:rgba(139,123,255,.92);color:#0b0c12;padding:2px 6px;border-radius:5px;z-index:2}
+  .dlcast{font:11.5px var(--body);color:var(--txt);margin:1px 0 4px}
+  .dlvt{font:11px var(--mono);color:var(--purple);margin-bottom:5px}
+  .dlvt .vtlink{color:var(--purple);text-decoration:none;border-bottom:1px dotted var(--purple)}
+  .dlvt .vtlink:hover{color:var(--txt)}
+  .dlgen{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:7px}
+  .dlgch{font:9px var(--mono);background:var(--a08);color:var(--muted);padding:2px 7px;border-radius:5px}
+  .prose{font-size:14.5px;line-height:1.72;color:#e3e3e3;overflow-wrap:anywhere}
+  .prose h1{font-family:var(--disp);font-size:22px;margin:4px 0 14px;font-weight:700}
+  .prose h2{font-family:var(--disp);font-size:17px;margin:24px 0 10px;font-weight:600;color:var(--txt);border-bottom:1px solid var(--line);padding-bottom:6px}
+  .prose h3{font-family:var(--disp);font-size:14.5px;margin:18px 0 8px;font-weight:600;color:var(--pk)}
+  .prose p{margin:10px 0}
+  .prose ul,.prose ol{margin:10px 0;padding-left:22px}.prose li{margin:4px 0}
+  .prose code{font:12.5px var(--mono);background:var(--a08);padding:1.5px 6px;border-radius:5px;color:var(--pk2)}
+  .prose pre{background:rgba(0,0,0,.45);border:1px solid var(--line);border-radius:9px;padding:14px;overflow:auto;font:12.5px var(--mono);color:#d9d9d9}
+  .prose hr{border:none;border-top:1px solid var(--line);margin:20px 0}
+  .prose a{word-break:break-all}
+  /* a wide table (e.g. a horizontal infobox) scrolls inside its OWN box instead of stretching the whole panel */
+  .prose table{display:block;width:max-content;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:14px 0;font-size:13px;background:var(--surface2);border-radius:9px}
+  .prose th,.prose td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+  .prose th{background:var(--pk3);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--pk);white-space:nowrap}
+  .playbar{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+  .playbtn{font:12px var(--mono);border:1px solid var(--pk3);background:var(--pk3);color:var(--pk2);
+    padding:9px 16px;border-radius:var(--r);cursor:pointer;letter-spacing:.03em;transition:.15s}
+  .playbtn:hover{background:rgba(228,64,95,.22)}
+  .empty{color:var(--dim);font:13px var(--mono);text-align:center;padding:60px 0}
+  .foot{color:var(--dim);font:10.5px var(--mono);text-align:center;margin-top:44px;letter-spacing:.4px}
+  .hide{display:none}
+</style></head><body>
+<div id="amb"><div class="wash"></div><div class="dots"></div></div>
+<div class="wrap">
+  <div class="top">
+    <a class="logo" href="/" data-realm-home style="text-decoration:none"><span class="dot"></span>Sasayaki<b>//囁き研究</b></a>
+    <div id="realmnav" data-theme-host></div><script src="/realm.js"></script>
+    <div class="langsw" id="langsw" title="page language"><b data-l="en">EN</b><b data-l="ja">JA</b><b data-l="zh">ZH</b></div>
+  </div>
+
+  <div id="home">
+    <div class="hero">
+      <h1>The <span>Sasayaki Wiki</span></h1>
+      <p>A private fan-wiki of this ASMR archive — <b>researched, written, and maintained entirely by the local AI</b> from the transcripts. Creator profiles, persona notes, and a page for every stream. Click any work to play it in the library.</p>
+      <div class="hstats">
+        <div class="hstat"><b id="hc">…</b> creators</div>
+        <div class="hstat"><b id="hn">…</b> research pages</div>
+        <div class="hstat">100% local · no cloud</div>
+      </div>
+    </div>
+    <input class="search" id="q" placeholder="search creators…" autocomplete="off" spellcheck="false">
+    <div class="sechead">Creator portals</div>
+    <div class="grid" id="grid"></div>
+    <div class="empty hide" id="homeEmpty">no creators researched yet — run the local wiki build</div>
+  </div>
+
+  <div id="creator" class="hide"></div>
+  <div id="note" class="hide"></div>
+  <div id="dlmodal"><div class="dlmbox"></div></div>
+
+  <div class="foot">SASAYAKI//囁き · local-AI research wiki · pages stream from your machine, never the cloud</div>
+</div>
+<script>
+let WIKI=[], CUR=null;
+let WLANG=localStorage.getItem('sasa_lang')||'en', LASTVIEW=null;
+const TRCACHE={};
+const $=id=>document.getElementById(id);
+function esc(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));}
+function fmtDur(s){if(!s)return'';const m=Math.round(s/60);return m>=60?(m/60).toFixed(1)+'h':m+'m';}
+function show(v,_noPush){['home','creator','note'].forEach(x=>$(x).classList.toggle('hide',x!==v));window.scrollTo(0,0);
+  if(!_noPush&&v==='home'){history.pushState({page:'home'},'',location.pathname);}}
+function hue(s){let h=0;for(let i=0;i<(s||'').length;i++)h=(h*31+s.charCodeAt(i))%360;return h;}
+function avatar(name,sz){const h=hue(name);
+  return '<div class="pav" style="width:'+sz+'px;height:'+sz+'px;font-size:'+Math.round(sz*0.42)+'px;--h:'+h+';--h2:'+((h+45)%360)+'">'+
+    esc((name||'?').trim().charAt(0))+'<img src="/wikimg?id='+encodeURIComponent(name)+'" onerror="this.remove()" alt="" loading="lazy"></div>';}
+
+/* ---- minimal markdown renderer (notes are standard md: # headings, tables, lists, links) ---- */
+function inl(s){
+  s=esc(s).replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/(^|[\s(])(https?:\/\/[^\s<)"]+)/g,'$1<a href="$2" target="_blank" rel="noopener">$2</a>')
+    .replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')
+    .replace(/(^|[^*])\*([^*\n]+)\*/g,'$1<i>$2</i>');
+  return s;
+}
+function table(rows){
+  let r=rows.map(x=>x.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(c=>c.trim()));
+  r=r.filter(row=>!row.every(c=>/^:?-{2,}:?$/.test(c)||c===''));
+  let h='<table>';r.forEach((row,i)=>{const t=i===0?'th':'td';h+='<tr>'+row.map(c=>'<'+t+'>'+inl(c)+'</'+t+'>').join('')+'</tr>';});
+  return h+'</table>';
+}
+function md2html(md){
+  const L=(md||'').replace(/\r/g,'').split('\n');let h='',i=0;
+  while(i<L.length){let ln=L[i];
+    if(/^```/.test(ln)){
+      const lang=((ln.match(/^`+\s*([A-Za-z0-9_+#.-]+)/)||[])[1]||'').toLowerCase();
+      let b=[];i++;while(i<L.length&&!/^```/.test(L[i])){b.push(L[i]);i++;}i++;
+      const pipe=b.filter(x=>/^\s*\|.*\|/.test(x)).length;     // local-LLM output often FENCES the whole note or the infobox table — render it, don't dump as raw <pre>
+      const heads=b.filter(x=>/^#{1,4}\s/.test(x)).length;
+      const isMd=lang==='markdown'||lang==='md'||(!lang&&(pipe>=2||heads>=2));
+      if(isMd){h+=md2html(b.join('\n'));}                      // wrapped markdown / fenced infobox → actually render
+      else{h+='<pre>'+b.map(esc).join('\n')+'</pre>';}         // genuine code sample stays literal
+      continue;}
+    if(/^\s*\|.*\|/.test(ln)){let rs=[];while(i<L.length&&/^\s*\|.*\|/.test(L[i])){rs.push(L[i]);i++;}h+=table(rs);continue;}
+    let m;if(m=ln.match(/^(#{1,4})\s+(.*)/)){const n=m[1].length;h+='<h'+n+'>'+inl(m[2])+'</h'+n+'>';i++;continue;}
+    if(/^\s*([-*_])\1{2,}\s*$/.test(ln)){h+='<hr>';i++;continue;}
+    if(/^\s*[-*]\s+/.test(ln)){let it=[];while(i<L.length&&/^\s*[-*]\s+/.test(L[i])){it.push('<li>'+inl(L[i].replace(/^\s*[-*]\s+/,''))+'</li>');i++;}h+='<ul>'+it.join('')+'</ul>';continue;}
+    if(/^\s*\d+\.\s+/.test(ln)){let it=[];while(i<L.length&&/^\s*\d+\.\s+/.test(L[i])){it.push('<li>'+inl(L[i].replace(/^\s*\d+\.\s+/,''))+'</li>');i++;}h+='<ol>'+it.join('')+'</ol>';continue;}
+    if(/^\s*$/.test(ln)){i++;continue;}
+    let p=[];while(i<L.length&&!/^\s*$/.test(L[i])&&!/^(#{1,4}\s|```|\s*\|)/.test(L[i])){p.push(L[i]);i++;}
+    h+='<p>'+inl(p.join(' '))+'</p>';
+  }
+  return h;
+}
+function libLink(libId){if(!libId)return null;var u='/library?play='+encodeURIComponent(libId);return window.realmUrl?window.realmUrl(u):u;}
+
+/* ---- views ---- */
+function renderHome(){
+  const q=$('q').value.toLowerCase().trim();
+  const list=WIKI.filter(c=>!q||c.creator.toLowerCase().includes(q));
+  $('hc').textContent=WIKI.length;
+  $('hn').textContent=WIKI.reduce((a,c)=>a+c.notes,0);
+  const g=$('grid');g.innerHTML='';
+  $('homeEmpty').classList.toggle('hide',list.length>0);
+  list.forEach(c=>{
+    const d=document.createElement('div');d.className='pcard';
+    d.innerHTML=avatar(c.creator,48)+'<div class="pbody"><div class="nm">'+esc(c.creator)+'</div><div class="meta">'+
+      '<span class="tagp c">'+c.notes+' pages</span>'+
+      (c.profile?'<span class="tagp t">profile</span>':'')+
+      (c.overview?'<span class="tagp">overview</span>':'')+'</div></div>';
+    d.onclick=()=>openCreator(c);
+    g.appendChild(d);
+  });
+}
+const NOTECACHE={};
+async function fetchNote(id){
+  if(id in NOTECACHE)return NOTECACHE[id];                       // instant on repeat opens (this session)
+  try{const r=await fetch('/wikinote?id='+encodeURIComponent(id));if(!r.ok){NOTECACHE[id]=null;return null;}
+    const t=await r.text();NOTECACHE[id]=t;return t;}            // server sends max-age=120 → browser cache too
+  catch(e){return null;}
+}
+async function noteMd(id){      // note in the chosen language: en=original (server auto-repairs drift), ja/zh=translated
+  if(!id)return null;
+  const key=id+'|'+WLANG;
+  if(key in TRCACHE)return TRCACHE[key];
+  for(let i=0;i<70;i++){
+    let r; try{r=await fetch('/wikitr?id='+encodeURIComponent(id)+'&lang='+WLANG);}catch(e){return await fetchNote(id);}
+    if(r.status===200){const t=await r.text();TRCACHE[key]=t;return t;}
+    if(r.status===404)return null;
+    await new Promise(res=>setTimeout(res,2500));   // 202 -> local AI is translating; poll
+  }
+  return await fetchNote(id);
+}
+function setWLang(l){
+  if(l===WLANG)return; WLANG=l; localStorage.setItem('sasa_lang',l);
+  document.querySelectorAll('#langsw b').forEach(b=>b.classList.toggle('on',b.getAttribute('data-l')===l));
+  if(LASTVIEW&&LASTVIEW.kind==='note')openNote(LASTVIEW.id,LASTVIEW.c);
+  else if(LASTVIEW&&LASTVIEW.kind==='creator')openCreator(LASTVIEW.c);
+}
+async function openCreator(c,_noPush){
+  if(c.creator==='Sasayaki')return openToolPage(c,_noPush);    // the project entry = the tool's own page
+  if(c.creator==='DLsite')return openDlsitePage(c,_noPush);    // the DLsite entry = a products gallery
+  CUR=c;LASTVIEW={kind:'creator',c};show('creator',true);
+  if(!_noPush)history.pushState({page:'creator',creator:c.creator},'','#'+encodeURIComponent(c.creator));
+  const el=$('creator');
+  el.innerHTML='<div class="crumb"><a href="#" id="bk">Wiki</a> &rsaquo; <b>'+esc(c.creator)+'</b></div>'+
+    '<div class="chead">'+avatar(c.creator,76)+'<div><h1 class="ctitle">'+esc(c.creator)+'</h1>'+
+    '<div class="csub">'+c.notes+' research pages &middot; written by the local AI</div></div></div>'+
+    '<div id="cbody"><div class="empty">'+(WLANG!=='en'?'translating to '+WLANG.toUpperCase()+'… (local AI)':'loading…')+'</div></div>';
+  $('bk').onclick=e=>{e.preventDefault();show('home');};
+  let html='';
+  const [p,o]=await Promise.all([                                // fetch profile + overview in parallel, not serially
+    c.profile?noteMd(c.creator+'/_profile.md'):Promise.resolve(null),
+    c.overview?noteMd(c.creator+'/_overview.md'):Promise.resolve(null)]);
+  if(p)html+='<div class="panel byai"><div class="byai-badge"><span class="d"></span>AI-researched profile</div><div class="prose">'+md2html(p)+'</div></div>';
+  if(o)html+='<div class="panel"><div class="byai-badge"><span class="d"></span>overview</div><div class="prose">'+md2html(o)+'</div></div>';
+  html+=creatorSigPanel(c.creator);
+  // works list
+  let wl='<div class="panel"><div class="sechead" style="margin-top:0">Stream pages ('+c.works.length+')</div><div class="worklist">';
+  c.works.forEach(w=>{
+    const ll=libLink(w.libId);
+    wl+='<div class="wrow"><span class="wt" data-note="'+encodeURIComponent(c.creator+'/'+w.file)+'">'+esc(w.base)+'</span>'+
+      '<span class="wkb">'+w.kb+'k</span>'+
+      (ll?'<a class="wbtn play" href="'+ll+'">&#9654; play</a>':'')+
+      '<span class="wbtn rd" data-note="'+encodeURIComponent(c.creator+'/'+w.file)+'">read</span></div>';
+  });
+  wl+='</div></div>';
+  html+=wl;
+  $('cbody').innerHTML=html||'<div class="empty">no pages</div>';
+  el.querySelectorAll('[data-note]').forEach(n=>{n.onclick=()=>openNote(decodeURIComponent(n.getAttribute('data-note')),c);n.onmouseenter=()=>noteMd(decodeURIComponent(n.getAttribute('data-note')));});
+  el.querySelectorAll('.csig-c[data-cr]').forEach(n=>n.onclick=()=>navCreator(n.getAttribute('data-cr')));
+}
+async function openDlsitePage(c,_noPush){
+  show('creator',true);if(!_noPush)history.pushState({page:'creator',creator:'DLsite'},'','#DLsite');
+  const el=$('creator');
+  let data={products:[]};try{data=await(await fetch('/dlsite.json',{cache:'no-store'})).json();}catch(e){}
+  const P=data.products||[];
+  // Map each product to its playable library tracks. Products carry no track paths, but each
+  // DLsite track's library id embeds the product title as a path segment
+  // (DLsite\Audio\<circle>\<title>\...\TrackNN…). So match by title-in-id. Tracks deep-link to
+  // /library?play=<id>, reusing library.html's existing auto-play-on-load handler.
+  let LIB=[];try{LIB=await(await fetch('/library.json',{cache:'no-store'})).json();}catch(e){}
+  const dlWorks=LIB.filter(w=>String(w.id).indexOf('DLsite')>=0);
+  const tracksFor=(title)=>{const t=(title||'').trim();if(!t)return [];
+    return dlWorks.filter(w=>String(w.id).indexOf(t)>=0)
+      .sort((a,b)=>String(a.id).localeCompare(String(b.id),'ja'));};
+  const makers=[...new Set(P.map(p=>p.maker||p.circle).filter(Boolean))];
+  const vas=[...new Set(P.flatMap(p=>p.voiceActors||[]))];
+  let h='<div class="crumb"><a href="#" id="bk">Wiki</a> &rsaquo; <b>DLsite collection</b></div>'+
+    '<div class="chead">'+avatar('DLsite',76)+'<div><h1 class="ctitle">DLsite collection</h1>'+
+    '<div class="csub">'+P.length+' products &middot; '+makers.length+' circles &middot; '+vas.length+' voice actors</div></div></div>';
+  if(makers.length)h+='<div class="dlcircles"><b>Circles</b>'+makers.map(m=>'<span class="dlchip">'+esc(m)+'</span>').join('')+
+    (vas.length?'<br><b>Voice actors</b>'+vas.map(v=>'<span class="dlchip va">'+esc(v)+'</span>').join(''):'')+'</div>';
+  h+='<div class="dlgrid">';
+  P.forEach((p,i)=>{
+    const cover=p.jacket?'<img src="/dlimg?id='+encodeURIComponent(p.jacket)+'" onerror="this.parentNode.parentNode.classList.add(\'noimg\')" alt="" loading="lazy">':'';
+    const va=(p.voiceActors||[]).join(' · ');
+    const gens=(p.genres||[]).filter(g=>g).slice(0,4);
+    const vt=(p.vtubers||[]);
+    const trN=tracksFor(p.title).length;
+    h+='<div class="dlcard'+(p.jacket?'':' noimg')+'" data-idx="'+i+'"><div class="dljak dlopen">'+cover+'<span class="dlinit">'+esc((p.title||'?').trim().charAt(0))+'</span>'+(p.isVtuber?'<span class="vtbadge">VTuber</span>':'')+'</div>'+
+      '<div class="dlmeta"><div class="dlcr">'+esc(p.maker||p.circle||'DLsite')+(p.date?' &middot; '+esc(p.date):'')+(p.tracks?' &middot; '+p.tracks+' tr':'')+'</div>'+
+      '<div class="dlti dlopen">'+esc(p.title)+'</div>'+
+      (va?'<div class="dlcast">&#127908; '+esc(va)+'</div>':'')+
+      (vt.length?'<div class="dlvt">in your roster: '+vt.map(c=>'<a href="#" class="vtlink" data-c="'+esc(c)+'">'+esc(c)+'</a>').join(', ')+'</div>':'')+
+      (gens.length?'<div class="dlgen">'+gens.map(g=>'<span class="dlgch">'+esc(g)+'</span>').join('')+'</div>':'')+
+      '<div class="dllinks"><a href="#" class="dlopen">'+(trN?'&#9654; preview &middot; '+trN+' track'+(trN>1?'s':''):'view details')+' &rsaquo;</a></div>'+
+      '</div></div>';
+  });
+  h+='</div>'+(P.length?'':'<div class="empty">no products indexed yet — run dlsite_products.py</div>');
+  el.innerHTML=h;
+  el.querySelectorAll('.vtlink').forEach(a=>a.onclick=e=>{e.preventDefault();const c=WIKI.find(x=>x.creator===a.getAttribute('data-c'));if(c)openCreator(c);});
+  el.querySelectorAll('.dlcard').forEach(card=>{
+    const p=P[+card.getAttribute('data-idx')];
+    card.querySelectorAll('.dlopen').forEach(t=>t.onclick=e=>{e.preventDefault();openDlProduct(p,tracksFor(p.title));});
+  });
+  $('bk').onclick=e=>{e.preventDefault();show('home');};
+}
+
+// DLsite product preview modal — full synopsis + playable track list in one popup, replacing the
+// cramped inline <details> dropdowns.
+function openDlProduct(p,tracks){
+  const m=$('dlmodal'); if(!m)return;
+  const cover=p.jacket?'<img src="/dlimg?id='+encodeURIComponent(p.jacket)+'" alt="">':'';
+  const va=(p.voiceActors||[]).join(' · ');
+  const gens=(p.genres||[]).filter(g=>g);
+  const meta=[p.maker||p.circle||'DLsite',p.date,(p.tracks?p.tracks+' tracks':''),(va?'CV '+va:'')].filter(Boolean).join(' &middot; ');
+  let b='<button class="dlmx" id="dlmxc">&times;</button>'+
+    '<div class="dlmhead"><div class="dlmjak">'+cover+'</div><div class="dlminfo">'+
+      '<div class="dlmcr">'+esc(p.maker||p.circle||'DLsite')+'</div>'+
+      '<div class="dlmti">'+esc(p.title)+'</div>'+
+      '<div class="dlmmeta">'+meta+'</div>'+
+      (gens.length?'<div class="dlmgen">'+gens.map(g=>'<span class="dlgch">'+esc(g)+'</span>').join('')+'</div>':'')+
+    '</div></div>';
+  if(p.about)b+='<div class="dlmsyn"><h4>Synopsis</h4>'+md2html(p.about)+'</div>';
+  if(tracks&&tracks.length){
+    b+='<div class="dlmtracks"><h4>'+tracks.length+' track'+(tracks.length>1?'s':'')+' in library</h4><ol class="dlmtrk">'+
+      tracks.map((w,i)=>'<li><span class="pn">'+(i+1)+'</span><a href="/library?play='+encodeURIComponent(w.id)+'">'+esc(w.title||w.base)+'</a>'+(w.dur?'<span class="dltd">'+fmtDur(w.dur)+'</span>':'')+'</li>').join('')+'</ol></div>';
+  }
+  b+='<a class="dlmlink" href="'+esc(p.url)+'" target="_blank" rel="noopener">'+(p.rj?esc(p.rj)+' on DLsite &#8599;':'find on DLsite &#8599;')+'</a>';
+  m.querySelector('.dlmbox').innerHTML=b;
+  m.classList.add('on');
+  $('dlmxc').onclick=closeDlProduct;
+}
+function closeDlProduct(){const m=$('dlmodal');if(m)m.classList.remove('on');}
+(function(){const m=$('dlmodal');if(m)m.addEventListener('click',e=>{if(e.target===m)closeDlProduct();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDlProduct();});})();
+async function openToolPage(c,_noPush){
+  show('creator',true);if(!_noPush)history.pushState({page:'creator',creator:'Sasayaki'},'','#Sasayaki');
+  const el=$('creator');
+  let st={};try{st=await(await fetch('/data.json',{cache:'no-store'})).json();}catch(e){}
+  const S=st.stats||{},W=WIKI.reduce((a,x)=>a+x.notes,0);
+  const g=(st.overall&&st.overall.gpu)||null;
+  const statusWord={RUNNING:'⚙️ working',DONE:'✓ idle (last run done)',STALLED:'⏸ paused',IDLE:'idle'}[st.status]||'idle';
+  const nowLine=st.status==='RUNNING'&&st.curFile?('transcribing <b>'+esc(st.curFile)+'</b>'):'nothing running right now — everything is up to date';
+  const chip=(label,val)=>'<div class="hstat"><b>'+val+'</b> '+label+'</div>';
+  el.innerHTML=
+   '<div class="crumb"><a href="#" id="bk">Wiki</a> &rsaquo; <b>Sasayaki — the tool</b></div>'+
+   '<div class="chead">'+avatar('Sasayaki',76)+'<div><h1 class="ctitle">Sasayaki 囁き</h1>'+
+     '<div class="csub">the local system that built this whole archive · 100% on your machines, nothing in the cloud</div></div></div>'+
+   '<div class="panel"><div class="prose"><p><b>Sasayaki</b> ("whisper") turns raw ASMR streams into a clean, searchable, bilingual archive — '+
+     'and then researches it. It listens to each stream, writes Japanese subtitles, translates them to English, grades its own work, '+
+     'and has a local AI write a wiki about every creator and stream. Everything here — this wiki, the player, the dashboard — is produced by it.</p></div></div>'+
+   '<div class="panel byai"><div class="byai-badge"><span class="d"></span>live status &middot; the friendly /debug</div>'+
+     '<div class="prose" style="margin-bottom:14px">Right now: '+nowLine+' &middot; <b>'+statusWord+'</b></div>'+
+     '<div class="hstats">'+chip('streams archived',S.tracks!=null?S.tracks:'—')+chip('JA subtitles',S.ja!=null?S.ja:'—')+
+       chip('EN translations',S.en!=null?S.en:'—')+chip('research pages',W)+
+       (g?chip('3090 load',(g.util!=null?g.util:'?')+'%')+chip('VRAM',(g.vramUsedGB!=null?g.vramUsedGB+'/'+g.vramTotalGB+'GB':'—')):'')+
+     '</div></div>'+
+   '<div class="panel"><div class="prose"><h2>How it works</h2><ol>'+
+     '<li><b>Listen → subtitle.</b> A speech model fine-tuned for breathy Japanese ASMR (<i>anime-whisper</i>) transcribes each stream into a <code>.ja.srt</code> — without the "thank you for watching" hallucinations vanilla models make on whispery audio.</li>'+
+     '<li><b>Translate.</b> A local LLM turns the Japanese into natural English subtitles, never dropping a line.</li>'+
+     '<li><b>Grade.</b> It scores its own transcripts (coverage + accuracy vs official scripts) so you can see quality, not guess.</li>'+
+     '<li><b>Research.</b> A local AI reads every transcript and writes this wiki — creator profiles and a page per stream — pulling real facts from across the web, never inventing.</li>'+
+     '<li><b>Browse.</b> The library plays the audio with generated cover art; this wiki cross-links to it.</li>'+
+   '</ol></div></div>'+
+   '<div class="panel"><div class="prose"><h2>The pages</h2>'+
+     '<table><tr><th><a href="/">live dashboard</a></th><td>the control room — what\'s transcribing now, throughput, GPU, quality grades, and an AI console you can ask for recommendations.</td></tr>'+
+     '<tr><th><a href="/library">library</a></th><td>an audio player for the whole archive with searchable, sound-tagged, fingerprint cover art.</td></tr>'+
+     '<tr><th><a href="/wiki">wiki</a></th><td>you are here — the local AI\'s research on every creator and stream, with portraits.</td></tr>'+
+     '<tr><th><a href="/debug">debug</a></th><td>the raw diagnostics this page summarizes — exact models, jobs, GPU, and logs.</td></tr></table></div></div>'+
+   '<div class="panel"><div class="prose"><h2>Under the hood</h2><ul>'+
+     '<li><b>Ears:</b> anime-whisper (Whisper fine-tune) on an RTX 3090.</li>'+
+     '<li><b>Brain:</b> local LLMs (qwen / phi4) for translation + research — no cloud, your data never leaves home.</li>'+
+     '<li><b>Muscle:</b> scales from one GPU to a small household cluster for parallel work.</li>'+
+     '<li><b>Goal:</b> a private, preservation-grade, bilingual ASMR archive that researches itself.</li>'+
+   '</ul></div></div>';
+  $('bk').onclick=e=>{e.preventDefault();show('home');};
+}
+async function openNote(id,c,_noPush){
+  LASTVIEW={kind:'note',id,c};
+  show('note',true);
+  if(!_noPush){const base=id.split('/').pop().replace(/\.md$/,'');history.pushState({page:'note',id,creator:c.creator},'','#'+encodeURIComponent(c.creator)+'/'+encodeURIComponent(base));}
+  const el=$('note');
+  el.innerHTML='<div class="crumb"><a href="#" id="bk2">Wiki</a> &rsaquo; <a href="#" id="bk3">'+esc(c.creator)+'</a> &rsaquo; <b>page</b></div><div class="empty">'+(WLANG!=='en'?'translating to '+WLANG.toUpperCase()+'…':'loading…')+'</div>';
+  $('bk2').onclick=e=>{e.preventDefault();show('home');};
+  $('bk3').onclick=e=>{e.preventDefault();openCreator(c);};
+  const txt=await noteMd(id);
+  const base=id.split('/').pop().replace(/\.md$/,'');
+  const w=(c.works||[]).find(x=>x.file===id.split('/').pop());
+  const ll=w&&libLink(w.libId);
+  let head='<div class="crumb"><a href="#" id="b2">Wiki</a> &rsaquo; <a href="#" id="b3">'+esc(c.creator)+'</a> &rsaquo; <b>'+esc(base)+'</b></div>';
+  let bar=ll?'<div class="playbar"><a class="playbtn" href="'+ll+'">&#9654; Open in library player</a></div>':'';
+  el.innerHTML=head+bar+'<div class="panel byai"><div class="byai-badge"><span class="d"></span>AI research note</div><div class="prose">'+(txt?md2html(txt):'<div class="empty">note not found</div>')+'</div></div>';
+  $('b2').onclick=e=>{e.preventDefault();show('home');};
+  $('b3').onclick=e=>{e.preventDefault();openCreator(c);};
+}
+$('q').addEventListener('input',renderHome);
+document.querySelectorAll('#langsw b').forEach(b=>{b.classList.toggle('on',b.getAttribute('data-l')===WLANG);b.onclick=()=>setWLang(b.getAttribute('data-l'));});
+/* ---- creator ASMR signature hexagon (from creator_radar + creator_similar) ---- */
+var CRAD={},CSIM={},RAX=['dialogue','triggers','binaural','intimacy','whisper','sleep'],
+  RLB={dialogue:'DIALOGUE',triggers:'TRIGGERS',binaural:'BINAURAL',intimacy:'INTIMACY',whisper:'WHISPER',sleep:'SLEEP'},
+  RPAL=['#e4405f','#ff6b8a','#46e08a','#f0c24a','#7ad7ff','#b388ff'];
+document.head.insertAdjacentHTML('beforeend','<style>.csig-row{display:flex;align-items:center;gap:18px;flex-wrap:wrap}.csig-svg{width:212px;height:212px;flex:none}.csig-meta{display:flex;flex-direction:column;gap:8px;font-family:monospace}.csig-peak{font:700 12px monospace;color:var(--txt)}.csig-peak b{color:var(--pk)}.csig-rt{display:flex;gap:6px;flex-wrap:wrap}.csig-rt .rb{font:700 10px monospace;padding:2px 7px;border-radius:5px}.csig-rt .r18{color:#ff5a5f;border:1px solid #5a2326}.csig-rt .r15{color:#f0c24a;border:1px solid #4a3f1d}.csig-rt .all{color:#46e08a;border:1px solid #1d4a32}.csig-l{font:700 8px monospace;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}.csig-sim{display:flex;flex-direction:column;gap:3px;margin-top:2px}.csig-c{font:600 12px monospace;color:var(--blue);cursor:pointer}.csig-c:hover{color:var(--txt);text-decoration:underline}</style>');
+function radarSVG(ax,size){size=size||212;var cx=size/2,cy=size/2,R=size*0.31,n=6;
+  function pt(i,r){var a=-Math.PI/2+i*2*Math.PI/n;return[cx+r*Math.cos(a),cy+r*Math.sin(a)];}
+  var g='<svg viewBox="0 0 '+size+' '+size+'" class="csig-svg">';
+  [0.25,0.5,0.75,1].forEach(function(rg){var p=[];for(var i=0;i<n;i++){var q=pt(i,R*rg);p.push(q[0].toFixed(1)+','+q[1].toFixed(1));}g+='<polygon points="'+p.join(' ')+'" fill="none" stroke="#26262e"/>';});
+  for(var i=0;i<n;i++){var e=pt(i,R);g+='<line x1="'+cx+'" y1="'+cy+'" x2="'+e[0].toFixed(1)+'" y2="'+e[1].toFixed(1)+'" stroke="#26262e"/>';}
+  var pp=[];for(var i=0;i<n;i++){var q=pt(i,R*((ax[RAX[i]]||0)/100));pp.push(q[0].toFixed(1)+','+q[1].toFixed(1));}
+  g+='<polygon points="'+pp.join(' ')+'" fill="rgba(228,64,95,.22)" stroke="#e4405f" stroke-width="2" stroke-linejoin="round"/>';
+  for(var i=0;i<n;i++){var v=ax[RAX[i]]||0,q=pt(i,R*(v/100));g+='<circle cx="'+q[0].toFixed(1)+'" cy="'+q[1].toFixed(1)+'" r="2.4" fill="'+RPAL[i]+'"/>';
+    var l=pt(i,R+16),anc=Math.abs(l[0]-cx)<8?'middle':(l[0]>cx?'start':'end');
+    g+='<text x="'+l[0].toFixed(1)+'" y="'+l[1].toFixed(1)+'" fill="#9aa" font-size="7" text-anchor="'+anc+'" dominant-baseline="middle">'+RLB[RAX[i]]+' <tspan fill="'+RPAL[i]+'">'+v+'</tspan></text>';}
+  return g+'</svg>';}
+function navCreator(name){var c=WIKI&&WIKI.find(function(x){return x.creator===name;});if(c)openCreator(c);}
+function creatorSigPanel(creator){var rd=CRAD[creator];if(!rd)return '';
+  var ax=rd.axes||{},rm=rd.ratings||{},sim=(CSIM[creator]&&CSIM[creator].similar)||[];
+  var rb=(rm.r18?'<span class="rb r18">R18 '+rm.r18+'</span>':'')+(rm.r15?'<span class="rb r15">R15 '+rm.r15+'</span>':'')+(rm.all?'<span class="rb all">SFW '+rm.all+'</span>':'');
+  var sh=sim.length?'<div class="csig-sim"><span class="csig-l">similar creators</span>'+sim.map(function(s){return '<span class="csig-c" data-cr="'+esc(s.name)+'">'+esc(s.name)+'</span>';}).join('')+'</div>':'';
+  return '<div class="panel"><div class="byai-badge"><span class="d"></span>ASMR signature &middot; '+rd.n+' works analysed</div>'+
+    '<div class="csig-row">'+radarSVG(ax,212)+'<div class="csig-meta"><div class="csig-peak">peak: <b>'+RLB[rd.signature]+'</b></div><div class="csig-rt">'+rb+'</div>'+sh+'</div></div></div>';}
+fetch('/creator_radar.json',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){CRAD=(d&&d.creators)||{};if(LASTVIEW&&LASTVIEW.kind==='creator'&&LASTVIEW.c)openCreator(LASTVIEW.c);}).catch(function(){});
+fetch('/creator_similar.json',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){CSIM=(d&&d.creators)||{};if(LASTVIEW&&LASTVIEW.kind==='creator'&&LASTVIEW.c)openCreator(LASTVIEW.c);}).catch(function(){});
+fetch((window.realmUrl?window.realmUrl('/wiki.json'):'/wiki.json'),{cache:'no-store'}).then(r=>r.json()).then(d=>{WIKI=d;renderHome();
+  setTimeout(function(){WIKI.forEach(function(c){if(c.profile)noteMd(c.creator+'/_profile.md');if(c.overview)noteMd(c.creator+'/_overview.md');});},500);  // prefetch -> creator pages open instantly
+  // deep-link: #<creator> or #<creator>/<base> — also handles refresh on a sub-view URL
+  if(location.hash.length>1){const t=decodeURIComponent(location.hash.slice(1));const ci=t.indexOf('/');
+    if(ci>0){const cr=t.slice(0,ci),bs=t.slice(ci+1);const c=WIKI.find(x=>x.creator===cr);if(c){const w=c.works.find(x=>x.base===bs);if(w){openNote(cr+'/'+w.file,c,true);return;}openCreator(c,true);return;}}
+    const c=WIKI.find(x=>x.creator===t);if(c){openCreator(c,true);return;}}
+  // seed the home history entry so popstate can always return here
+  history.replaceState({page:'home'},'',location.pathname+location.search+(location.hash||''));
+}).catch(()=>{$('homeEmpty').classList.remove('hide');});
+/* ---- back/forward navigation (Razer side button, browser back) ---- */
+window.addEventListener('popstate',function(e){
+  const s=e.state;
+  if(!s||s.page==='home'){show('home',true);return;}
+  if(s.page==='creator'){
+    if(!WIKI.length)return;                                      // data not yet loaded — hash handler will pick it up
+    const c=WIKI.find(x=>x.creator===s.creator);if(c)openCreator(c,true);return;}
+  if(s.page==='note'){
+    if(!WIKI.length)return;
+    const c=WIKI.find(x=>x.creator===s.creator);if(c)openNote(s.id,c,true);return;}
+});
+</script></body></html>

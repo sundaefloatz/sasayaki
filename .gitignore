@@ -1,0 +1,36 @@
+# This repo ships CODE ONLY. No content, no credentials, no model weights, ever.
+
+# ── your actual library, if nested inside this checkout ──
+# (shouldn't happen given the compose bind-mount layout, but belt-and-suspenders)
+*.mp3
+*.m4a
+*.wav
+*.flac
+*.opus
+*.ogg
+*.mp4
+*.mkv
+*.webm
+
+# ── secrets / cookies / credentials ──
+*cookies*
+*.cookies
+*secret*
+*.env
+!.env.example
+*token*
+*.pem
+*.key
+
+# ── derived data / caches / logs (regenerated at runtime) ──
+_data/
+_wiki/
+__pycache__/
+*.pyc
+*.log
+_jobs/
+_backups/
+
+# ── OS / editor cruft ──
+.DS_Store
+Thumbs.db

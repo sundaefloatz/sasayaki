@@ -1,0 +1,211 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sasayaki 囁き // intel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;
+  --bg:#181a1b;--surf:#1d1f20;--surf2:#232526;--line:rgba(255,255,255,.06);--line2:rgba(255,255,255,.11);
+  --txt:#e8e6e3;--muted:#9b958f;--dim:#5d5852;
+  --pk:#e4405f;--pk2:#ff7a99;--green:#3fdc97;--blue:#5b8cff;--amber:#f1c453;--purple:#9b7bff;
+  --accent-soft:#e4405f22;--accent-glow:#e4405f55;
+  --r:8px;--r2:15px;--ease:cubic-bezier(.16,1,.3,1);
+  --hatch:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 5px,transparent 5px 11px);
+  --mono:"JetBrains Mono",ui-monospace,monospace;--disp:"Space Grotesk",system-ui,sans-serif;--body:"Inter",system-ui,sans-serif}
+/* intel is a dark-only operator page (Adriel 2026-07-09). realm.js applies data-theme=light globally
+   from sasa_theme; re-pin the NEUTRALS under light (!important beats realm.js's later style), leave
+   --pk/accents so the sandbox realm still recolors. (data-theme-host also removed from #realmnav below
+   so no dead toggle button shows.) */
+html[data-theme=light]{--bg:#181a1b!important;--surf:#1d1f20!important;--surf2:#232526!important;
+  --line:rgba(255,255,255,.06)!important;--line2:rgba(255,255,255,.11)!important;
+  --txt:#e8e6e3!important;--muted:#9b958f!important;--dim:#5d5852!important;color-scheme:dark!important}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font:13.5px/1.6 var(--mono);min-height:100dvh;-webkit-font-smoothing:antialiased}
+#amb{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#amb .wash{position:absolute;inset:-5%;background:radial-gradient(ellipse 60% 40% at 20% -5%,var(--pk3),transparent 60%),radial-gradient(ellipse 50% 35% at 90% 100%,rgba(228,64,95,.08),transparent 60%)}
+#amb .dots{position:absolute;inset:0;opacity:.35;background-image:radial-gradient(circle,var(--a04) 1px,transparent 1.5px);background-size:22px 22px}
+a{color:var(--pk2);text-decoration:none}
+.topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:0 22px}
+.topinner{max-width:1180px;margin:0 auto;height:54px;display:flex;align-items:center;gap:14px;position:relative;z-index:1}
+.logo{font:700 15px var(--mono);letter-spacing:-.3px}.logo span{color:var(--pk)}
+.topnav{display:flex;gap:2px;margin-left:6px;flex-wrap:wrap}
+.topnav a{font:11px var(--mono);padding:6px 10px;border-radius:var(--r);color:var(--muted);transition:.15s}
+.topnav a:hover{color:var(--pk2);background:var(--pk3)}.topnav a.on{color:var(--pk2);background:var(--pk3)}
+.up{margin-left:auto;font:11px var(--mono);color:var(--dim)}
+.livedot{width:6px;height:6px;flex:none;border-radius:50%;background:var(--pk);box-shadow:0 0 8px var(--pk);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@media (prefers-reduced-motion:reduce){.livedot{animation:none}}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 22px 80px;position:relative;z-index:1}
+h1{font:700 21px var(--mono);letter-spacing:.04em;text-transform:uppercase;margin-bottom:3px}
+h1 .jp{color:var(--pk);font-weight:500}
+.lede{color:var(--muted);font-size:12.5px;margin-bottom:22px;max-width:78ch}
+.vh{font:11px var(--mono);text-transform:uppercase;letter-spacing:.11em;color:var(--muted);margin:26px 0 13px;display:flex;align-items:center;gap:9px}
+.vh::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+.vh::before{content:"//";color:var(--pk)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.card{--acc:var(--txt);background:var(--surf);border:1px solid var(--line);border-radius:var(--r2);padding:15px 16px 17px;position:relative;overflow:hidden;transition:transform .25s var(--ease),border-color .2s,box-shadow .2s}
+.card::before{content:"";position:absolute;left:-15%;top:-25%;width:90%;height:130%;background:radial-gradient(ellipse 70% 60% at 35% 45%,color-mix(in srgb,var(--acc) 14%,transparent),transparent 72%);pointer-events:none}
+.card:hover{transform:translateY(-4px);border-color:var(--accent-soft);box-shadow:0 8px 22px #0008,0 0 18px var(--accent-soft)}
+.card .k{display:inline-block;font:10px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--pk);border:1px solid var(--accent-soft);padding:2px 7px;border-radius:4px;margin-bottom:9px;position:relative}
+.c-mut .k,.card.zero .k{color:var(--muted);border-color:var(--line2)}
+.card .n{font:700 27px/1 var(--mono);letter-spacing:-1px;color:var(--acc);position:relative}
+.card .n .scr{opacity:.5}
+.card .s{font:10px var(--mono);color:var(--dim);margin-top:6px;position:relative}
+.card .ub{position:absolute;left:14px;right:14px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--acc);opacity:.8}
+.c-pk{--acc:var(--pk)}.c-gr{--acc:var(--green)}.c-bl{--acc:var(--blue)}.c-am{--acc:var(--amber)}.c-pu{--acc:var(--purple)}
+.c-mut{--acc:#aaa49d}.c-mut::before{opacity:.45}.c-mut .ub{opacity:.2}
+.card.hero{grid-column:span 2;--acc:var(--pk);border-color:color-mix(in srgb,var(--pk) 28%,var(--line))}
+.card.hero::before{width:110%;background:radial-gradient(ellipse 80% 75% at 32% 42%,var(--accent-glow),transparent 74%);opacity:.55}
+.card.hero .n{font-size:36px;background:linear-gradient(90deg,var(--pk),var(--pk2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.card.zero .n{color:var(--dim)}.card.zero .ub{opacity:.12}
+.card.zero::after{content:"";position:absolute;inset:0;background:var(--hatch);pointer-events:none}
+table{width:100%;border-collapse:separate;border-spacing:0 3px;font-size:12.5px}
+th{font:10px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:right;padding:7px 12px}
+th:first-child,td:first-child{text-align:left}
+td{padding:9px 12px;font-family:var(--mono);font-size:12px;background:rgba(255,255,255,.018);border-top:1px solid var(--line);border-bottom:1px solid var(--line);transition:background .15s,border-color .15s}
+td:first-child{border-left:1px solid var(--line);border-radius:10px 0 0 10px}
+td:last-child{border-right:1px solid var(--line);border-radius:0 10px 10px 0}
+tr:hover td{background:var(--surf2);border-color:var(--line2)}
+.nm{color:var(--txt);font-weight:600}
+.tk{color:var(--pk);font-weight:600}.dimc{color:var(--dim)}
+.pill{font:9px var(--mono);padding:3px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.05em;border:1px solid transparent;white-space:nowrap}
+.pill.ok{background:rgba(63,220,151,.12);color:var(--green);border-color:rgba(63,220,151,.25)}
+.pill.no{background:rgba(255,255,255,.04);color:var(--dim);border-color:var(--line)}
+.pill.graduated{background:rgba(241,196,83,.12);color:var(--amber);border-color:rgba(241,196,83,.25)}
+.pill.active{background:rgba(63,220,151,.1);color:var(--green);border-color:rgba(63,220,151,.22)}
+.pill.booth,.pill.ci-en{background:rgba(91,140,255,.12);color:var(--blue);border-color:rgba(91,140,255,.25)}
+.stage{display:flex;align-items:center;gap:11px;margin:10px 0}
+.stage .nm2{width:120px;flex:none;font:12px var(--mono);color:var(--txt)}
+.stage .track{flex:1;height:9px;position:relative;background-image:radial-gradient(circle,rgba(255,255,255,.12) 1.6px,transparent 2.1px);background-size:11px 9px;background-position:0 50%;background-repeat:repeat-x}
+.stage .track.zero{background-image:var(--hatch)}
+.stage .fill{position:absolute;left:0;top:0;bottom:0;display:block;background-image:radial-gradient(circle,var(--pk) 1.6px,transparent 2.1px);background-size:11px 9px;background-position:0 50%;background-repeat:repeat-x;box-shadow:0 0 6px var(--accent-glow);border-radius:5px}
+.stage .ct{width:92px;flex:none;text-align:right;font:11px var(--mono);color:var(--muted)}
+.panel{background:var(--surf);border:1px solid var(--line);border-radius:var(--r2);padding:8px 10px;overflow:hidden}
+.panel.pad{padding:16px 18px}
+.note{font-size:11.5px;color:var(--dim);margin-top:22px;line-height:1.6}.note b{color:var(--muted)}
+</style></head><body>
+<div id="amb"><div class="wash"></div><div class="dots"></div></div>
+<div class="topbar"><div class="topinner">
+  <a class="logo" href="/" data-realm-home style="text-decoration:none">Sasayaki<span>//INTEL</span></a>
+  <div id="realmnav"></div><script src="/realm.js"></script>
+  <span class="livedot" style="margin-left:auto"></span><span class="up" id="up" style="margin-left:0">—</span>
+</div></div>
+
+<div class="wrap">
+  <h1>Intelligence inventory <span class="jp">蓄積</span></h1>
+  <div class="lede">Not "is it healthy" (that's Debug) — <b>how much does Sasayaki know</b>, and how good a scraper has it
+    become per site. Breadth in creators/works/sites · depth in <b>hours</b> (audio) + <b>tokens</b> (the text corpus
+    that trains a smarter Sasayaki) + <b>vectors</b> (embeddings).</div>
+
+  <div class="vh">knowledge totals</div>
+  <div class="cards" id="totals"></div>
+
+  <div class="vh">pipeline depth · what we've built from the raw audio</div>
+  <div class="panel pad" id="stages"></div>
+
+  <div class="vh">processing backlog · what still needs a GPU phase (process_ledger.py)</div>
+  <div class="cards" id="ledger"></div>
+
+  <div class="vh">scraper coverage · how effective per site</div>
+  <div class="panel"><table id="sites"><thead><tr><th>site</th><th>cookie</th><th>recipe</th><th>subs</th><th>collected</th><th>GB</th><th>notes</th></tr></thead><tbody></tbody></table></div>
+
+  <div class="vh">by creator · knowledge per voice</div>
+  <div class="panel"><table id="creators"><thead><tr><th>creator</th><th>status</th><th>src</th><th>works</th><th>hours</th><th>JA</th><th>EN</th><th>tokens</th></tr></thead><tbody></tbody></table></div>
+
+  <div class="note"><b>On "tokens":</b> yes, it's the right unit for the text dimension — transcripts + translations + research are
+    literally the corpus a fine-tuned Sasayaki learns from, so token count = training-data scale. (Estimate: ~0.9 tok/JA-char.)
+    Audio is measured in hours/GB, breadth in creators/works, semantic reach in embedding vectors. Refreshes every 15s.</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>{n=+n||0; if(n>=1e9)return (n/1e9).toFixed(1)+'B'; if(n>=1e6)return (n/1e6).toFixed(1)+'M'; if(n>=1e3)return (n/1e3).toFixed(1)+'k'; return ''+n;};
+const esc=s=>(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+function reduced(){try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}}
+/* text scramble (ported from home.html): decode-style settle for live numbers */
+function scrambleTo(el,finalText,dur){
+  if(reduced()||document.hidden){el.textContent=finalText;return;}
+  const t0=performance.now();dur=dur||900;
+  const chars=finalText.split('');
+  (function tick(now){
+    const p=Math.min(1,(now-t0)/dur);
+    const lock=Math.floor(p*chars.length);
+    let out='';
+    for(let i=0;i<chars.length;i++){
+      if(!/[0-9]/.test(chars[i])){out+=chars[i];continue;}     // keep separators (, . G B k) stable
+      out+=i<lock?chars[i]:`<span class="scr">${Math.random()*10|0}</span>`;
+    }
+    el.innerHTML=out;
+    if(p<1)requestAnimationFrame(tick);else el.textContent=finalText;
+  })(t0);
+}
+const prevN={};
+const CKEY='sasa_metrics_'+(window.SASA_REALM||'core');
+function render(d){
+  $('up').textContent='updated '+d.updated;
+  const t=d.totals||{};
+  const cards=[
+    ['hero c-pk', fmt(t.estTokens), 'knowledge tokens', (t.jaChars||0).toLocaleString()+' JA chars of dialogue'],
+    ['c-mut', t.creators, 'creators', ''],
+    ['c-mut', t.works, 'works', (t.audioHours||0)+' h audio'],
+    ['c-bl', t.embeddings, 'embeddings', 'index vectors'],
+    ['c-gr', t.cienSubs, 'ci-en subs', 'rippable'],
+    ['c-am', t.ytVideos, 'yt videos', 'sandbox'],
+    ['c-pu', t.dlsiteProducts, 'dlsite products', ''],
+    ['c-mut', (t.researchBytes/1024).toFixed(0)+'k', 'research bytes', 'dossiers'],
+    ['c-mut', t.audioGB+'GB', 'audio', 'on disk'],
+    ['c-mut', t.wikiSeeds, 'wiki seeds', 'preserved meta'],
+  ];
+  $('totals').innerHTML=cards.map(([cls,n,k,s])=>`<div class="card ${cls}"><div class="k">${k}</div><div class="n">${n}</div>${s?`<div class="s">${s}</div>`:''}<div class="ub"></div></div>`).join('');
+  document.querySelectorAll('#totals .card').forEach((el,i)=>{
+    const val=String(cards[i][1]), key=cards[i][2];
+    if(parseFloat(val)===0)el.classList.add('zero');
+    if(prevN[key]!==undefined&&prevN[key]!==val)scrambleTo(el.querySelector('.n'),val);  // only scramble CHANGED values
+    prevN[key]=val;
+  });
+
+  const st=d.stages||{}, W=t.works||1;
+  const stg=[['Transcribed','transcribed','pk'],['Translated','translated','bl'],['Tagged','tagged','am'],['Embedded','embedded','pu'],['Researched','researched','gr']];
+  $('stages').innerHTML=stg.map(([lbl,k])=>{const v=st[k]||0,p=Math.min(100,Math.round(v/W*100));return `<div class="stage"><span class="nm2">${lbl}</span><div class="track${p===0?' zero':''}"><span class="fill" style="width:${p}%"></span></div><span class="ct">${v} / ${W}</span></div>`;}).join('')
+    +`<div class="stage"><span class="nm2 dimc">dialogue cues</span><div class="track"></div><span class="ct">${fmt(st.jaCues)} JA · ${fmt(st.enCues)} EN</span></div>`;
+
+  $('sites').querySelector('tbody').innerHTML=(d.sites||[]).map(s=>`<tr>
+    <td class="nm">${esc(s.site)}</td>
+    <td><span class="pill ${s.cookie?'ok':'no'}">${s.cookie?'✓':'—'}</span></td>
+    <td><span class="pill ${s.recipe?'ok':'no'}">${s.recipe?'cracked':'—'}</span></td>
+    <td>${s.subs||'·'}</td><td>${s.collected? s.collected+' '+s.unit : '·'}</td><td>${s.gb||'·'}</td>
+    <td class="dimc">${esc(s.note)}</td></tr>`).join('');
+
+  $('creators').querySelector('tbody').innerHTML=(d.creators||[]).map(c=>`<tr>
+    <td class="nm">${esc(c.creator)}</td>
+    <td>${c.status&&c.status!=='null'?`<span class="pill ${c.status}">${esc(c.status)}</span>`:'<span class="dimc">·</span>'}</td>
+    <td>${c.source&&c.source!=='null'?`<span class="pill ${c.source}">${esc(c.source)}</span>`:'<span class="dimc">·</span>'}</td>
+    <td>${c.works}</td><td>${c.hours}</td><td>${c.jaWorks}</td><td>${c.enWorks}</td><td class="tk">${fmt(c.tokens)}</td></tr>`).join('');
+}
+async function poll(){
+  let d; try{ d=await (await fetch(window.realmUrl?window.realmUrl('/metrics.json'):'/metrics.json',{cache:'no-store'})).json(); }catch(e){ return; }
+  try{ localStorage.setItem(CKEY, JSON.stringify(d)); }catch(e){}
+  render(d);
+}
+// retention: paint last-known intel instantly so switching to this page never blanks while the scan runs
+try{ const c=localStorage.getItem(CKEY); if(c){ render(JSON.parse(c)); $('up').textContent='cached · refreshing…'; } }catch(e){}
+poll(); setInterval(poll,15000);
+/* processing backlog from the version ledger (/ledger.json) — what still needs a GPU phase.
+   Core-pipeline concept only: in the sandbox realm the section hides instead of rendering zeros (#104). */
+if(window.SASA_REALM==='sandbox'){ $('ledger').style.display='none'; $('ledger').previousElementSibling.style.display='none'; }
+async function loadLedger(){
+  if(window.SASA_REALM==='sandbox') return;
+  let d; try{ d=await (await fetch(window.realmUrl?window.realmUrl('/ledger.json'):'/ledger.json',{cache:'no-store'})).json(); }catch(e){ return; }
+  const s=(d.summary&&d.summary.community)||{}, dl=(d.summary&&d.summary.dlsite)||{};
+  const cards=[
+    ['c-am', s['need-reseg']||0, 'need reseg', 'community'],
+    ['c-bl', s['need-translate']||0, 'need translate', 'community'],
+    ['c-pk', s['need-asr']||0, 'need ASR', 'transcribe first'],
+    ['c-gr', s['done']||0, 'done', 'community works'],
+    ['c-mut', dl['need-reseg']||0, 'DLsite reseg', 'deprioritized'],
+  ];
+  $('ledger').innerHTML=cards.map(([cls,n,k,sub])=>`<div class="card ${cls}${(+n===0&&cls!=='c-gr')?' zero':''}"><div class="k">${k}</div><div class="n">${n}</div><div class="s">${sub}</div><div class="ub"></div></div>`).join('');
+}
+loadLedger(); setInterval(loadLedger,60000);
+</script>
+</body></html>

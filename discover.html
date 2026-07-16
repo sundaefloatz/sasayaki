@@ -1,0 +1,183 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sasayaki 囁き // discover</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;
+  --bg:#181a1b;--surf:#1d1f20;--surf2:#232526;--card:#202223;--line:rgba(255,255,255,.06);--line2:rgba(255,255,255,.12);
+  --txt:#e8e6e3;--muted:#9b958f;--dim:#5d5852;
+  --pk:#e4405f;--pk2:#ff7a99;--pk3:rgba(228,64,95,.14);
+  --amber:#f1c453;--teal:#38b2a3;--a04:rgba(255,255,255,.04);--a08:rgba(255,255,255,.08);
+  --r:8px;--ease:cubic-bezier(.16,1,.3,1);
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+  --body:"Zen Kaku Gothic New","KozGo",system-ui,sans-serif;
+  --disp:"Shippori Mincho","Rodin",serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font:14px/1.6 var(--body);min-height:100dvh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:0 20px}
+.topinner{max-width:1280px;margin:0 auto;height:54px;display:flex;align-items:center;gap:14px}
+.logo{font:700 17px var(--disp);letter-spacing:-.3px;white-space:nowrap}
+.logo span{color:var(--pk)}
+.wrap{max-width:1280px;margin:0 auto;padding:26px 20px 90px}
+h1{font:800 30px/1.2 var(--disp);letter-spacing:-.5px}
+h1 .jp{color:var(--pk);font-weight:600}
+.lede{color:var(--muted);font-size:13px;margin:6px 0 8px;max-width:70ch}
+/* section header — editorial serif + hairline, j-asmr featured-collection vibe */
+.sec{margin-top:34px}
+.sech{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+.sech h2{font:700 20px var(--disp);letter-spacing:-.3px}
+.sech .why{font:11px var(--mono);color:var(--dim)}
+.sech::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line2),transparent);transform:translateY(-4px)}
+.secsub{color:var(--muted);font-size:12.5px;margin-bottom:14px}
+/* asmr.one-style dense responsive grid */
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px 12px}
+/* ============ the asmr.one work card, on Sasayaki tokens ============ */
+.wcard{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;
+  transition:transform .22s var(--ease),border-color .2s,box-shadow .25s;cursor:pointer}
+.wcard:hover{transform:translateY(-4px);border-color:var(--pk3);box-shadow:0 10px 26px rgba(0,0,0,.55),0 0 16px var(--pk3)}
+.wcov{position:relative;aspect-ratio:4/3;background:var(--surf2);overflow:hidden}
+.wcov img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .4s var(--ease)}
+.wcard:hover .wcov img{transform:scale(1.05)}
+.wcov .fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 34px var(--disp);color:var(--dim)}
+/* corner chips — dense square, asmr.one brown-chip anatomy */
+.cchip{position:absolute;font:700 9.5px var(--mono);letter-spacing:.03em;padding:3px 7px;border-radius:4px;background:rgba(12,12,13,.78);color:#fff;backdrop-filter:blur(2px)}
+.cchip.tl{top:7px;left:7px}
+.cchip.br{bottom:7px;right:7px}
+.cchip.reason{top:7px;right:7px;background:color-mix(in srgb,var(--pk) 82%,#000);max-width:72%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wbody{padding:10px 11px 8px;display:flex;flex-direction:column;gap:7px;flex:1}
+.wtitle{font:500 13.5px/1.42 var(--body);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.8em}
+/* creator = teal square chip (asmr.one VA chip) */
+.wva{display:flex;flex-wrap:wrap;gap:5px}
+.vachip{font:600 10px var(--mono);padding:3px 8px;border-radius:4px;background:rgba(56,178,163,.16);color:var(--teal);border:1px solid rgba(56,178,163,.25);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vachip:hover{background:rgba(56,178,163,.28)}
+/* rating row — amber stars + grey count, mono */
+.wmeta{display:flex;align-items:center;gap:7px;font:11px var(--mono);color:var(--dim);min-height:16px}
+.stars{color:var(--amber);letter-spacing:1px;font-size:11px}
+.wmeta .dl{color:var(--muted)}
+.wmeta .dur{margin-left:auto}
+.wsep{height:1px;background:var(--line);margin:1px 0}
+/* tag chips — dense square, wrapping */
+.wtags{display:flex;flex-wrap:wrap;gap:4px;padding:0 11px 11px}
+.tchip{font:10px var(--mono);padding:2.5px 7px;border-radius:4px;background:var(--a04);color:var(--muted);border:1px solid var(--line)}
+.tchip:hover{color:var(--pk2);border-color:var(--pk3)}
+.empty{color:var(--dim);font:12px var(--mono);padding:30px;text-align:center;border:1px dashed var(--line2);border-radius:10px}
+.toolrow{display:flex;align-items:center;gap:10px;margin-top:18px}
+.reroll{font:700 11px var(--mono);letter-spacing:.05em;padding:8px 16px;border-radius:18px;background:transparent;border:1px solid var(--line2);color:var(--muted);cursor:pointer;transition:.18s}
+.reroll:hover{color:#fff;background:var(--pk);border-color:var(--pk)}
+@media(max-width:560px){.dgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}}
+</style></head><body>
+<div class="topbar"><div class="topinner">
+  <a class="logo" href="/" data-realm-home>Sasayaki<span>//囁き</span></a>
+  <div id="realmnav" data-theme-host></div><script src="/realm.js"></script>
+</div></div>
+
+<div class="wrap">
+  <h1>Discover <span class="jp">発見</span></h1>
+  <div class="lede">Fresh picks from your own shelves — related works, creators like the ones you collect, and a
+    themed collection. Every card says <b>why</b> it's here.</div>
+  <div class="toolrow"><button class="reroll" id="reroll">↻ re-roll picks</button><span id="stat" style="font:10px var(--mono);color:var(--dim)"></span></div>
+  <div id="sections"></div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+let ALL=[],SIM={},TAGMAP={},SEED=+(localStorage.getItem('sasa_disc_seed')||1);
+/* deterministic PRNG so a given seed always deals the same hand; re-roll bumps the seed */
+function rng(){let s=SEED*2654435761%4294967296;return()=>{s=(s*1664525+1013904223)%4294967296;return s/4294967296;};}
+function txTag(t){try{const c=(TAGMAP.map||{})[t]||t;const e=((TAGMAP.canonical||{})[c]||{}).en;return e||t;}catch(x){return t;}}
+function stars(r){const f=Math.round(r);return '★'.repeat(Math.min(5,f))+'☆'.repeat(Math.max(0,5-f));}
+function fmtDur(s){if(!s)return'';const m=Math.round(s/60);return m>=60?(m/60).toFixed(1)+'h':m+'m';}
+function overlap(a,b){const B=new Set(b);return (a||[]).filter(t=>B.has(t));}
+
+function card(w,reason){
+  const tags=(w.tags||[]).slice(0,4);
+  return `<a class="wcard" href="/library?play=${encodeURIComponent(w.id)}">
+    <div class="wcov">
+      <div class="fallback">${esc((w.creator||'?').charAt(0))}</div>
+      <img loading="lazy" src="/thumb?id=${encodeURIComponent(w.id)}" onerror="this.remove()" alt="">
+      ${w.dur?`<span class="cchip tl">${fmtDur(w.dur)}</span>`:''}
+      ${reason?`<span class="cchip reason" title="${esc(reason)}">${esc(reason)}</span>`:''}
+    </div>
+    <div class="wbody">
+      <div class="wtitle">${esc(w.title||w.base)}</div>
+      <div class="wva"><span class="vachip">${esc(w.creator)}</span></div>
+      <div class="wmeta">${w.rating?`<span class="stars">${stars(w.rating)}</span><span>${w.rating.toFixed(1)}</span>`:''}
+        ${w.dlCount?`<span class="dl">${(w.dlCount/1000).toFixed(1)}k DL</span>`:''}
+      </div>
+    </div>
+    <div class="wsep"></div>
+    <div class="wtags">${tags.map(t=>`<span class="tchip">#${esc(txTag(t))}</span>`).join('')||'<span class="tchip" style="opacity:.4">—</span>'}</div>
+  </a>`;
+}
+function section(title,why,sub,cards){
+  if(!cards.length)return'';
+  return `<div class="sec"><div class="sech"><h2>${esc(title)}</h2><span class="why">${esc(why)}</span></div>
+    ${sub?`<div class="secsub">${esc(sub)}</div>`:''}
+    <div class="dgrid">${cards.join('')}</div></div>`;
+}
+
+function build(){
+  const R=rng();
+  const pool=ALL.filter(w=>!w.hidden&&!w.pending);
+  const pick=(arr,n)=>{const a=[...arr];for(let i=a.length-1;i>0;i--){const j=(R()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];}return a.slice(0,n);};
+  const secs=[];
+
+  /* 1 — Because you have <seed>: tag-overlap neighbors ranked by shared tags + rating */
+  const seeds=pool.filter(w=>(w.tags||[]).length>=3);
+  const seed=pick(seeds,1)[0];
+  if(seed){
+    const near=pool.filter(w=>w.id!==seed.id&&w.creator!==seed.creator)
+      .map(w=>({w,ov:overlap(seed.tags,w.tags)}))
+      .filter(x=>x.ov.length>=2)
+      .sort((a,b)=>(b.ov.length+(b.w.rating||0)/10)-(a.ov.length+(a.w.rating||0)/10));
+    secs.push(section('Because you have…','tag neighbors',`“${(seed.title||seed.base).slice(0,70)}” — works sharing its triggers`,
+      near.slice(0,6).map(x=>card(x.w,`${x.ov.length} shared tags`))));
+  }
+
+  /* 2 — Creators like <A>: creator_similar.json bridges */
+  const counts={};pool.forEach(w=>counts[w.creator]=(counts[w.creator]||0)+1);
+  const tops=Object.keys(counts).filter(c=>c!=='DLsite'&&SIM[c]).sort((a,b)=>counts[b]-counts[a]).slice(0,5);
+  const anchor=pick(tops,1)[0];
+  if(anchor){
+    const sims=(SIM[anchor].similar||[]).filter(s=>s.name!=='DLsite');
+    const cards2=[];
+    for(const s of sims){
+      const theirs=pool.filter(w=>w.creator===s.name).sort((a,b)=>(b.rating||0)-(a.rating||0));
+      pick(theirs,2).forEach(w=>cards2.push(card(w,`${Math.round(s.sim*100)}% like ${anchor.split(' ')[0]}`)));
+    }
+    secs.push(section(`Creators like ${anchor}`,`acoustic similarity · signature: ${SIM[anchor].signature}`,
+      `Voices whose sound profile matches a shelf you already collect`,cards2.slice(0,6)));
+  }
+
+  /* 3 — Hidden gems: rated DLsite works you likely skipped (high rating, low your-exposure) */
+  const gems=pool.filter(w=>w.rating>=4.4).sort((a,b)=>(b.rating||0)-(a.rating||0));
+  secs.push(section('Highly rated on the shelf','DLsite ratings','The best-reviewed works sitting in your own collection',
+    pick(gems.slice(0,30),6).map(w=>card(w,`★ ${w.rating.toFixed(1)} rated`))));
+
+  /* 4 — Featured collection: dominant-tag theme, j-asmr style */
+  const tagCount={};pool.forEach(w=>(w.tags||[]).forEach(t=>tagCount[t]=(tagCount[t]||0)+1));
+  const bigTags=Object.keys(tagCount).filter(t=>tagCount[t]>=8);
+  const theme=pick(bigTags,1)[0];
+  if(theme){
+    const themed=pool.filter(w=>(w.tags||[]).includes(theme));
+    secs.push(section(`Collection · ${txTag(theme)}`,`${tagCount[theme]} works in this theme`,
+      `A themed set from across every creator and circle you keep`,
+      pick(themed,6).map(w=>card(w,`#${txTag(theme)}`))));
+  }
+
+  $('#sections').innerHTML=secs.join('')||'<div class="empty">library still loading — nothing to pick from yet</div>';
+  $('#stat').textContent=`deal #${SEED} · ${pool.length} works in the pool`;
+}
+
+$('#reroll').addEventListener('click',()=>{SEED=(SEED%997)+1;try{localStorage.setItem('sasa_disc_seed',SEED);}catch(e){}build();});
+
+Promise.all([
+  fetch((window.realmUrl?window.realmUrl('/library.json'):'/library.json'),{cache:'no-store'}).then(r=>r.json()).catch(()=>[]),
+  fetch('/creator_similar.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>({creators:{}})),
+  fetch('/tagmap.json').then(r=>r.json()).catch(()=>({})),
+]).then(([lib,sim,tm])=>{ALL=lib||[];SIM=(sim||{}).creators||{};TAGMAP=tm||{};build();});
+</script>
+</body></html>

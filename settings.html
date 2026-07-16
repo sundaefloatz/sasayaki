@@ -1,0 +1,214 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sasayaki 囁き // settings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;
+  --bg:#181a1b;--surf:#1d1f20;--surf2:#232526;--line:rgba(255,255,255,.06);--line2:rgba(255,255,255,.11);
+  --txt:#e8e6e3;--muted:#9b958f;--dim:#5d5852;
+  --pk:#e4405f;--pk2:#ff7a99;--pk3:rgba(228,64,95,.14);
+  --green:#3fdc97;--amber:#f1c453;--blue:#5b8cff;
+  --r:8px;--ease:cubic-bezier(.16,1,.3,1);
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+  --body:"Zen Kaku Gothic New","KozGo",system-ui,sans-serif;
+  --logo:"Shippori Mincho","Rodin",serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font:14px/1.55 var(--body);overflow-x:hidden;min-height:100dvh;-webkit-font-smoothing:antialiased}
+#amb{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#amb .wash{position:absolute;inset:-5%;background:radial-gradient(ellipse 60% 40% at 20% -5%,var(--pk3),transparent 60%),radial-gradient(ellipse 50% 35% at 90% 100%,rgba(228,64,95,.08),transparent 60%)}
+#amb .dots{position:absolute;inset:0;opacity:.35;background-image:radial-gradient(circle,var(--a04) 1px,transparent 1.5px);background-size:22px 22px}
+a{color:var(--pk2);text-decoration:none}a:hover{text-decoration:underline}
+.topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);padding:0 20px}
+.topinner{max-width:980px;margin:0 auto;height:54px;display:flex;align-items:center;gap:14px;position:relative;z-index:1}
+.logo{font:700 16px var(--logo);letter-spacing:-.3px;white-space:nowrap;color:var(--txt)}
+.logo span{color:var(--pk)}
+.wrap{max-width:980px;margin:0 auto;padding:26px 20px 80px;position:relative;z-index:1}
+h1{font:800 30px var(--logo);letter-spacing:-.5px;margin-bottom:4px}
+h1 .jp{color:var(--pk);font-weight:600}
+.lede{color:var(--muted);font-size:13px;margin-bottom:22px;max-width:62ch}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:20px}
+.vh{font:700 15px var(--logo);letter-spacing:-.2px;color:var(--txt);margin-bottom:13px;
+  display:flex;align-items:baseline;gap:9px}
+.vh .en{font:10px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--dim);font-weight:400}
+.vh::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line2),transparent);transform:translateY(-3px)}
+label.fl{display:block;font:11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:14px 0 7px}
+label.fl:first-of-type{margin-top:0}
+select,input[type=text],input[type=number]{width:100%;background:var(--surf);border:1px solid var(--line);border-radius:var(--r);
+  color:var(--txt);font:13px var(--mono);padding:10px 12px;outline:none;transition:border-color .2s,box-shadow .2s}
+select:focus,input:focus{border-color:var(--pk);box-shadow:0 0 0 2px var(--pk3)}
+.hint{font-size:11.5px;color:var(--dim);margin-top:6px;line-height:1.5}
+.hint b{color:var(--muted);font-weight:600}
+.runners{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.runners label{display:flex;gap:9px;align-items:flex-start;cursor:pointer;padding:9px 11px;border:1px solid var(--line);
+  border-radius:var(--r);transition:.15s}
+.runners label:hover{border-color:var(--pk3)}
+.runners label.sel{border-color:var(--pk);background:var(--pk3)}
+.runners input{margin-top:3px;accent-color:var(--pk)}
+.runners .rt{font:12px var(--mono);font-weight:600;color:var(--txt)}
+.runners .rd{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+.submit{margin-top:20px;width:100%;background:var(--pk);color:#fff;border:none;border-radius:var(--r);
+  font:700 14px var(--logo);letter-spacing:.3px;padding:13px;cursor:pointer;transition:.15s}
+.submit:hover{background:var(--pk2)}.submit:disabled{opacity:.5;cursor:default}
+.receipt{margin-top:13px;font:12px var(--mono);padding:11px 13px;border-radius:var(--r);display:none}
+.receipt.ok{display:block;background:rgba(63,220,151,.12);color:var(--green);border:1px solid rgba(63,220,151,.3)}
+.receipt.err{display:block;background:rgba(241,90,95,.12);color:#ff7a7a;border:1px solid rgba(241,90,95,.3)}
+.factrow{display:flex;gap:10px;align-items:baseline;padding:8px 11px;background:var(--surf2);border:1px solid var(--line);
+  border-radius:var(--r);margin-bottom:7px;flex-wrap:wrap}
+.factrow .fk{font:11px var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);flex:none;min-width:90px}
+.factrow .fv{font:12px var(--mono);color:var(--txt);word-break:break-all}
+.pill{display:inline-block;font:10px var(--mono);padding:2px 8px;border-radius:20px;background:var(--pk3);color:var(--pk2);margin-left:6px;vertical-align:middle}
+</style></head><body>
+<div id="amb"><div class="wash"></div><div class="dots"></div></div>
+<div class="topbar"><div class="topinner">
+  <a class="logo" href="/" data-realm-home style="text-decoration:none">Sasayaki<span>//囁き</span></a>
+  <div id="realmnav" data-theme-host></div><script src="/realm.js"></script>
+</div></div>
+
+<div class="wrap">
+  <h1>Settings <span class="jp">設定</span></h1>
+  <div class="lede">Server-side pipeline knobs, saved to <code>_data/settings.json</code>. Pipeline scripts read
+    these as their default tier: <b>CLI flag &gt; env var &gt; settings.json &gt; built-in</b>. Playback prefs
+    (theme, volume, language) live in your browser and are set from the player / nav directly.</div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="vh">外観 <span class="en">Appearance · nav layout</span></div>
+      <div class="runners" id="navGrp">
+        <label><input type="radio" name="navlay" value="topbar">
+          <div><div class="rt">Top bar</div>
+          <div class="rd">The current shared nav strip across the top of every page.</div></div></label>
+        <label><input type="radio" name="navlay" value="sidebar">
+          <div><div class="rt">Sidebar</div>
+          <div class="rd">Media-app style left rail (Plex/Jellyfin feel) — holds nav, realm switch and
+            NAS status. Applies site-wide once the unified nav shell lands.</div></div></label>
+      </div>
+
+      <div class="vh" style="margin-top:22px">検閲 <span class="en">Content mode</span></div>
+      <div class="runners" id="cmodeGrp">
+        <label><input type="radio" name="cmode" value="unfiltered">
+          <div><div class="rt">Unfiltered 無修正</div>
+          <div class="rd">Full-fidelity library. Abliterated models allowed; explicit dialogue translated
+            faithfully — never euphemized, never softened. The archival default.</div></div></label>
+        <label><input type="radio" name="cmode" value="sanitized">
+          <div><div class="rt">Sanitized / SFW</div>
+          <div class="rd">For an all-ages library instance. Stock models only; generated text
+            (summaries, blurbs, wiki) keeps an SFW register.</div></div></label>
+      </div>
+
+      <div class="vh" style="margin-top:22px">機材 <span class="en">Hardware profile</span></div>
+      <div class="runners" id="roleGrp">
+        <label><input type="radio" name="wrole" value="full">
+          <div><div class="rt">Full <span class="pill">24GB — 3090 class</span></div>
+          <div class="rd">Everything: ASR, bulk translation, 32B judge, revise lane, training.</div></div></label>
+        <label><input type="radio" name="wrole" value="asr">
+          <div><div class="rt">ASR worker <span class="pill">8–12GB</span></div>
+          <div class="rd">Transcription + small-model translation. The bulk GPU grunt work fits here.</div></div></label>
+        <label><input type="radio" name="wrole" value="serve">
+          <div><div class="rt">Serve only <span class="pill">no GPU</span></div>
+          <div class="rd">Player, library, resegmentation, script alignment, indexing — all CPU.</div></div></label>
+      </div>
+
+      <div class="vh" style="margin-top:22px">言語 <span class="en">Languages</span></div>
+      <label class="fl" for="langs">Core subtitle lanes</label>
+      <input type="text" id="langs" spellcheck="false">
+      <div class="hint">Comma-separated. Audio detected outside these lanes is <b>quarantined for review</b>,
+        never silently mis-transcribed.</div>
+    </div>
+
+    <div class="card">
+      <div class="vh">頭脳 <span class="en">AI stack</span></div>
+      <label class="fl" for="llmApi">LLM endpoint</label>
+      <input type="text" id="llmApi" spellcheck="false" placeholder="http://localhost:11434/v1">
+      <div class="hint">OpenAI-compatible. Ollama = <b>:11434/v1</b>, LM Studio = <b>:1234/v1</b> — a wrong
+        port here silently placeholder-floods translations, so it lives where you can see it.</div>
+
+      <label class="fl" for="llmModel">Bulk translation model</label>
+      <input type="text" id="llmModel" list="modelList" spellcheck="false">
+      <label class="fl" for="reviseModel">Revise-lane model</label>
+      <input type="text" id="reviseModel" list="modelList" spellcheck="false">
+      <div class="hint">Slower, deeper model for targeted re-passes on flagged cues only.</div>
+      <label class="fl" for="zhModel">ZH lane model</label>
+      <input type="text" id="zhModel" list="modelList" spellcheck="false">
+      <label class="fl" for="asrModel">ASR model</label>
+      <input type="text" id="asrModel" spellcheck="false">
+      <label class="fl" for="resegMaxchars">Reseg max chars / cue</label>
+      <input type="number" id="resegMaxchars" min="20" max="200">
+      <datalist id="modelList"></datalist>
+
+      <button class="submit" id="saveBtn">Save settings</button>
+      <div class="receipt" id="receipt"></div>
+
+      <div class="vh" style="margin-top:22px">経路 <span class="en">Paths · read-only, set via env / docker-compose</span></div>
+      <div id="facts"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var S = {}, FIELDS = ["llmApi","llmModel","reviseModel","zhModel","asrModel","resegMaxchars","languages"];
+  function radio(group, val){
+    var els = document.querySelectorAll('#'+group+' input');
+    els.forEach(function(r){ r.checked = (r.value === val); r.closest('label').classList.toggle('sel', r.value === val); });
+  }
+  function radioVal(group){
+    var el = document.querySelector('#'+group+' input:checked'); return el ? el.value : null;
+  }
+  ['cmodeGrp','roleGrp','navGrp'].forEach(function(g){
+    document.getElementById(g).addEventListener('change', function(){
+      document.querySelectorAll('#'+g+' label').forEach(function(l){
+        l.classList.toggle('sel', l.querySelector('input').checked);
+      });
+      // nav layout previews instantly across the app (persisted to localStorage; realm.js reads it).
+      if (g === 'navGrp' && window.setNav) window.setNav(radioVal('navGrp'));
+    });
+  });
+  function load(){
+    fetch('/settings.json',{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
+      S = d.settings || {};
+      radio('cmodeGrp', S.contentMode); radio('roleGrp', S.workerRole); radio('navGrp', S.navLayout || 'topbar');
+      // settings.json is the source of truth for nav layout; sync it into localStorage so realm.js
+      // (which reads localStorage synchronously, flash-free) matches the saved server value everywhere.
+      if (window.setNav) window.setNav(S.navLayout || 'topbar');
+      document.getElementById('langs').value = S.languages || '';
+      FIELDS.slice(0,6).forEach(function(k){ var el = document.getElementById(k); if (el) el.value = S[k] != null ? S[k] : ''; });
+      var dl = document.getElementById('modelList'); dl.innerHTML = '';
+      ((d.facts && d.facts.ollamaModels) || []).forEach(function(m){
+        var o = document.createElement('option'); o.value = m; dl.appendChild(o);
+      });
+      var f = d.facts || {}, fx = document.getElementById('facts'); fx.innerHTML = '';
+      [['library', f.libraryRoot], ['app data', f.dataRoot], ['settings', f.settingsFile]].forEach(function(p){
+        if (!p[1]) return;
+        var row = document.createElement('div'); row.className = 'factrow';
+        var k = document.createElement('span'); k.className = 'fk'; k.textContent = p[0];
+        var v = document.createElement('span'); v.className = 'fv'; v.textContent = p[1];
+        row.appendChild(k); row.appendChild(v); fx.appendChild(row);
+      });
+    }).catch(function(){});
+  }
+  document.getElementById('saveBtn').addEventListener('click', function(){
+    var btn = this; btn.disabled = true;
+    var body = { contentMode: radioVal('cmodeGrp'), workerRole: radioVal('roleGrp'),
+                 navLayout: radioVal('navGrp'), languages: document.getElementById('langs').value };
+    ["llmApi","llmModel","reviseModel","zhModel","asrModel","resegMaxchars"].forEach(function(k){
+      body[k] = document.getElementById(k).value;
+    });
+    fetch('/settings/save', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
+      .then(function(r){return r.json()}).then(function(d){
+        var rc = document.getElementById('receipt');
+        rc.className = 'receipt ' + (d.ok ? 'ok' : 'err');
+        rc.textContent = d.ok ? ('saved' + (d.changed && d.changed.length ? ' — changed: ' + d.changed.join(', ') : ' — no changes')) : ('error: ' + d.error);
+        btn.disabled = false;
+      }).catch(function(e){
+        var rc = document.getElementById('receipt');
+        rc.className = 'receipt err'; rc.textContent = 'error: ' + e; btn.disabled = false;
+      });
+  });
+  load();
+})();
+</script>
+</body></html>

@@ -1,0 +1,356 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sasayaki 囁き // import</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:"KozGo";src:url("fonts/KozGoPr6N-Regular.otf");font-weight:400;font-display:swap}
+@font-face{font-family:"KozGo";src:url("fonts/KozGoPr6N-Medium.otf");font-weight:500;font-display:swap}
+@font-face{font-family:"KozGo";src:url("fonts/KozGoPr6N-Bold.otf");font-weight:700;font-display:swap}
+@font-face{font-family:"Klavika";src:url("fonts/klavika-bold.otf");font-weight:700;font-display:swap}
+:root{color-scheme:dark;
+  --bg:#181a1b;--surf:#1d1f20;--surf2:#232526;--line:rgba(255,255,255,.06);--line2:rgba(255,255,255,.11);
+  --txt:#e8e6e3;--muted:#9b958f;--dim:#5d5852;
+  --pk:#e4405f;--pk2:#ff7a99;--pk3:rgba(228,64,95,.14);
+  --green:#3fdc97;--amber:#f1c453;--blue:#5b8cff;
+  --r:8px;--ease:cubic-bezier(.16,1,.3,1);
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+  --body:"KozGo","Inter",system-ui,sans-serif;
+  --logo:"Klavika","KozGo",sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font:14px/1.55 var(--body);overflow-x:hidden;min-height:100dvh;-webkit-font-smoothing:antialiased}
+#amb{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#amb .wash{position:absolute;inset:-5%;background:radial-gradient(ellipse 60% 40% at 20% -5%,var(--pk3),transparent 60%),radial-gradient(ellipse 50% 35% at 90% 100%,rgba(228,64,95,.08),transparent 60%)}
+#amb .dots{position:absolute;inset:0;opacity:.35;background-image:radial-gradient(circle,var(--a04) 1px,transparent 1.5px);background-size:22px 22px}
+a{color:var(--pk2);text-decoration:none}a:hover{text-decoration:underline}
+.topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);padding:0 20px}
+.topinner{max-width:980px;margin:0 auto;height:54px;display:flex;align-items:center;gap:14px;position:relative;z-index:1}
+.logo{font:700 16px var(--logo);letter-spacing:-.3px;white-space:nowrap;color:var(--txt)}
+.logo span{color:var(--pk)}
+.topnav{display:flex;gap:2px;margin-left:8px}
+.topnav a{font:11px var(--mono);padding:6px 11px;border-radius:var(--r);color:var(--muted);transition:.15s}
+.topnav a:hover{color:var(--pk2);background:var(--pk3);text-decoration:none}
+.topnav a.on{color:var(--pk2);background:var(--pk3)}
+.wrap{max-width:980px;margin:0 auto;padding:26px 20px 80px;position:relative;z-index:1}
+h1{font:700 26px var(--logo);letter-spacing:-.4px;margin-bottom:4px}
+h1 .jp{color:var(--pk);font-weight:400}
+.lede{color:var(--muted);font-size:13px;margin-bottom:22px;max-width:62ch}
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:20px;align-items:start}
+.grid>*{min-width:0}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:20px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:18px}
+.seg b{font:12px var(--mono);padding:9px 18px;color:var(--muted);cursor:pointer;font-weight:600;transition:.15s;user-select:none;border:none;background:transparent}
+.seg b:hover{color:var(--txt)}.seg b.on{color:var(--pk2);background:var(--pk3)}
+label.fl{display:block;font:11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:14px 0 7px}
+label.fl:first-of-type{margin-top:0}
+select,input[type=text],textarea{width:100%;background:var(--surf);border:1px solid var(--line);border-radius:var(--r);
+  color:var(--txt);font:13px var(--body);padding:10px 12px;outline:none;transition:border-color .2s,box-shadow .2s}
+select:focus,input:focus,textarea:focus{border-color:var(--pk);box-shadow:0 0 0 2px var(--pk3)}
+textarea{font:12px/1.5 var(--mono);min-height:128px;resize:vertical;white-space:pre;overflow:auto}
+.hint{font-size:11.5px;color:var(--dim);margin-top:6px;line-height:1.5}
+.hint b{color:var(--muted);font-weight:600}
+.row2{display:flex;gap:12px;flex-wrap:wrap}
+.row2>div{flex:1 1 120px}
+.filepick{display:inline-flex;align-items:center;gap:7px;font:11px var(--mono);color:var(--muted);
+  border:1px dashed var(--line2);border-radius:var(--r);padding:7px 12px;cursor:pointer;margin-top:8px;transition:.15s}
+.filepick:hover{color:var(--pk2);border-color:var(--pk)}
+.runners{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.runners label{display:flex;gap:9px;align-items:flex-start;cursor:pointer;padding:9px 11px;border:1px solid var(--line);
+  border-radius:var(--r);transition:.15s}
+.runners label:hover{border-color:var(--pk3)}
+.runners label.sel{border-color:var(--pk);background:var(--pk3)}
+.runners input{margin-top:3px;accent-color:var(--pk)}
+.runners .rt{display:block;font:12px var(--mono);font-weight:600;color:var(--txt)}
+.runners .rd{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+.submit{margin-top:20px;width:100%;background:var(--pk);color:#fff;border:none;border-radius:var(--r);
+  font:700 14px var(--logo);letter-spacing:.3px;padding:13px;cursor:pointer;transition:.15s}
+.submit:hover{background:var(--pk2)}.submit:disabled{opacity:.5;cursor:default}
+.receipt{margin-top:13px;font:12px var(--mono);padding:11px 13px;border-radius:var(--r);display:none}
+.receipt.ok{display:block;background:rgba(63,220,151,.12);color:var(--green);border:1px solid rgba(63,220,151,.3)}
+.receipt.err{display:block;background:rgba(241,90,95,.12);color:#ff7a7a;border:1px solid rgba(241,90,95,.3)}
+.vh{font:11px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:13px;
+  display:flex;align-items:center;gap:9px}
+.vh::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+.vlist{display:flex;flex-direction:column;gap:7px}
+.vrow{display:flex;align-items:center;gap:10px;padding:9px 11px;background:var(--surf2);border:1px solid var(--line);border-radius:var(--r);transition:border-color .15s}
+.vrow:hover{border-color:var(--line2)}
+.vrow .dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--dim)}
+.vrow.has .dot{background:var(--green);box-shadow:0 0 7px rgba(63,220,151,.6)}
+.vrow .nm{font:12px var(--mono);font-weight:600;color:var(--txt);flex:none}
+.vrow .un{font-size:11px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vrow .meta{font:10px var(--mono);color:var(--dim);flex:none}
+.vrow .rn{font:9px var(--mono);text-transform:uppercase;letter-spacing:.06em;padding:2px 6px;border-radius:5px;flex:none;
+  background:#15171a;color:var(--dim)}
+.vrow .rn.local{color:var(--green);background:rgba(63,220,151,.12)}
+.vrow .rn.claude{color:var(--blue);background:rgba(91,140,255,.12)}
+.vrow .rn.manual{color:var(--amber);background:rgba(241,196,74,.12)}
+.vrow .del{font:9px var(--mono);text-transform:uppercase;letter-spacing:.06em;padding:3px 7px;border-radius:5px;flex:none;
+  background:transparent;border:1px solid var(--line2);color:var(--dim);cursor:pointer;transition:.15s}
+.vrow .del:hover{color:#ff7a7a;border-color:rgba(241,90,95,.5);background:rgba(241,90,95,.08)}
+.note{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-top:20px}
+.note h3{font:600 13px var(--logo);color:var(--txt);margin-bottom:9px}
+.note h3 .ic{color:var(--pk)}
+.note p{font-size:12.5px;color:var(--muted);margin:7px 0;line-height:1.6}
+.note code{font:11px var(--mono);background:var(--surf2);padding:1px 6px;border-radius:5px;color:var(--pk2)}
+.note .priv{color:var(--green)}
+</style></head><body>
+<div id="amb"><div class="wash"></div><div class="dots"></div></div>
+<div class="topbar"><div class="topinner">
+  <a class="logo" href="/" data-realm-home style="text-decoration:none">Sasayaki<span>//囁き</span></a>
+  <div id="realmnav" data-theme-host></div><script src="/realm.js"></script>
+</div></div>
+
+<div class="wrap">
+  <h1>Import <span class="jp">取り込み</span></h1>
+  <div class="lede">Drop a site <b>cookie</b> (reach your paid / member content), an <b>API&nbsp;key</b> (run a tool
+    like reverse-image search), or a <b>YouTube link</b> to <b>seed the wiki</b> from a video/playlist's metadata
+    &mdash; no download. Secrets save locally to <code>_secrets/</code> (git-ignored, never read by Claude);
+    seeds save to <code>_data/wiki_seed/</code>.</div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="seg" id="seg">
+        <b data-m="cookie" class="on">🍪 Cookie</b>
+        <b data-m="key">🔑 API key</b>
+        <b data-m="youtube">📺 YouTube</b>
+      </div>
+
+      <div id="secretsMode">
+      <label class="fl" for="src" id="srcLbl">Source</label>
+      <select id="src"></select>
+      <div class="hint" id="srcHint"></div>
+
+      <div id="newWrap" style="display:none">
+        <div class="row2">
+          <div><label class="fl">New id</label><input type="text" id="newId" placeholder="e.g. fanbox" autocomplete="off"></div>
+          <div><label class="fl" id="newSecLbl">Domain</label><input type="text" id="newSec" placeholder="e.g. fanbox.cc" autocomplete="off"></div>
+        </div>
+      </div>
+
+      <div id="cookieField">
+        <label class="fl" for="cookieVal">Cookies <span style="text-transform:none;color:var(--dim)">(Netscape cookies.txt)</span></label>
+        <textarea id="cookieVal" spellcheck="false" placeholder="# Netscape HTTP Cookie File&#10;.example.com	TRUE	/	TRUE	0	session	..."></textarea>
+        <label class="filepick">📄 load from a .txt file<input type="file" id="cookieFile" accept=".txt,text/plain" hidden></label>
+      </div>
+
+      <div id="keyField" style="display:none">
+        <label class="fl" for="keyVal">API key</label>
+        <input type="text" id="keyVal" spellcheck="false" autocomplete="off" placeholder="paste the key">
+        <div class="hint" id="keyGet"></div>
+      </div>
+
+      <label class="fl">Runner <span style="text-transform:none;color:var(--dim)">— who may use this</span></label>
+      <div class="runners" id="runners">
+        <label data-r="local"><input type="radio" name="runner" value="local"><span><span class="rt">local AI · autonomous</span><span class="rd">the local model may use it on its own in the research loop. Private — Claude never sees the results.</span></span></label>
+        <label data-r="claude"><input type="radio" name="runner" value="claude"><span><span class="rt">Claude · on request</span><span class="rd">used only when you ask Claude to run it. Not in the autonomous loop.</span></span></label>
+        <label data-r="manual"><input type="radio" name="runner" value="manual"><span><span class="rt">manual · browser only</span><span class="rd">DDoS-guarded sites (e.g. Kemono) — needs a real browser / the extension.</span></span></label>
+      </div>
+
+      <div class="row2" style="margin-top:14px">
+        <div style="flex:0 0 130px"><label class="fl">Gentle (sec)</label><input type="text" id="gentle" inputmode="numeric" placeholder="3"></div>
+      </div>
+
+      <button class="submit" id="save">Save to vault</button>
+      <div class="receipt" id="receipt"></div>
+      </div><!-- /secretsMode -->
+
+      <div id="youtubeMode" style="display:none">
+        <div class="hint" style="margin-bottom:12px">Paste a YouTube <b>video</b> or <b>playlist</b> URL. Sasayaki keeps its
+          <b>metadata, thumbnail and captions</b> — <b>no media download</b> — so the wiki survives even when the video
+          goes dark. Ideal for graduating VTubers and streams that vanish without notice.</div>
+        <label class="fl" for="ytUrl">YouTube URL</label>
+        <input type="text" id="ytUrl" spellcheck="false" autocomplete="off"
+          placeholder="https://youtu.be/…   or   https://youtube.com/playlist?list=…">
+        <label class="fl">What to keep</label>
+        <div class="runners" id="ytOpts">
+          <label data-y="full" class="sel"><input type="radio" name="ytmode" value="full" checked><span><span class="rt">full preserve</span><span class="rd">info + thumbnail + description + auto-captions (the spoken content). A few KB — best for the wiki + index.</span></span></label>
+          <label data-y="light"><input type="radio" name="ytmode" value="light"><span><span class="rt">metadata only</span><span class="rd">just the info.json (title / channel / date / duration). Fastest, lightest.</span></span></label>
+        </div>
+        <button class="submit" id="ytseed">📺 Seed the wiki</button>
+        <div class="receipt" id="ytreceipt"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="vh">vault · 🍪 cookies</div>
+        <div class="vlist" id="vCookies"></div>
+        <div class="vh" style="margin-top:20px">vault · 🔑 keys</div>
+        <div class="vlist" id="vKeys"></div>
+        <div class="vh" style="margin-top:20px">wiki seeds · 📺 <span id="seedCount" style="color:var(--pk);margin-left:4px;font-weight:700"></span></div>
+        <div class="vlist" id="vSeeds"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <h3><span class="ic">//</span> how it works &amp; privacy</h3>
+    <p class="priv">🔒 Values are opaque to Claude. They're written straight into <code>_secrets/cookies/*.txt</code> and
+      <code>_secrets/api_keys.json</code> — both git-ignored. The dashboard only ever reports <b>presence</b> (a file exists,
+      a key is non-empty) and a byte count, never the contents. The save log records the source + size, not the value.</p>
+    <p><b>Runner</b> decides who may act on a secret. <code>local</code> = the local AI uses it autonomously and privately
+      (DLsite, YouTube, asmr.one). <code>claude</code> = you hand it over per-task. <code>manual</code> = browser/extension only.</p>
+    <p><b>Gentle</b> is the minimum delay (seconds) between requests, so a membership account is never rate-limit flagged.</p>
+    <p>Cookies are taken from your browser with an extension (e.g. <i>Get cookies.txt</i> / <i>Video DownloadHelper</i>) in
+      <b>Netscape format</b> and pasted or file-loaded here. API keys (e.g. <a href="https://saucenao.com/user.php" target="_blank" rel="noopener">SauceNAO</a>
+      for reverse-image VTuber ID) go in the key tab.</p>
+  </div>
+</div>
+
+<script>
+let DATA={cookies:[],keys:[]}, MODE='cookie';
+const $=id=>document.getElementById(id);
+const esc=s=>(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+
+function setRunner(r){
+  document.querySelectorAll('#runners label').forEach(l=>l.classList.toggle('sel',l.dataset.r===r));
+  const el=document.querySelector('#runners input[value="'+r+'"]'); if(el) el.checked=true;
+}
+document.querySelectorAll('#runners label').forEach(l=>l.addEventListener('click',()=>setRunner(l.dataset.r)));
+
+function fillSrc(){
+  const sel=$('src'); sel.innerHTML='';
+  const list = MODE==='cookie'?DATA.cookies:DATA.keys;
+  for(const s of list){
+    const o=document.createElement('option'); o.value=s.id;
+    o.textContent=(MODE==='cookie'?(s.domain||s.id):(s.label||s.id))+(s.present?'  ✓':'');
+    sel.appendChild(o);
+  }
+  const o=document.createElement('option'); o.value='__new__'; o.textContent='+ add new…'; sel.appendChild(o);
+  onSrc();
+}
+function curEntry(){ const list=MODE==='cookie'?DATA.cookies:DATA.keys; return list.find(x=>x.id===$('src').value); }
+function onSrc(){
+  const v=$('src').value, isNew=v==='__new__', e=isNew?null:curEntry();
+  $('newWrap').style.display=isNew?'block':'none';
+  $('newSecLbl').textContent = MODE==='cookie'?'Domain':'Label';
+  $('newSec').placeholder = MODE==='cookie'?'e.g. fanbox.cc':'e.g. TinEye';
+  if(e){
+    setRunner(e.runner||(MODE==='cookie'?'claude':'local'));
+    $('gentle').value = (e.gentle!=null?e.gentle:'');
+    $('srcHint').innerHTML = '<b>unlocks:</b> '+esc(e.unlocks||'—')+(e.present?'  ·  <span style="color:var(--green)">in vault'+(e.bytes?(' ('+e.bytes+' B)'):'')+'</span>':'  ·  not yet dropped');
+    $('keyGet').innerHTML = (MODE==='key'&&e.get)?('get it: '+esc(e.get)):'';
+  }else{
+    setRunner(MODE==='cookie'?'claude':'local'); $('gentle').value=''; $('srcHint').textContent=''; $('keyGet').textContent='';
+  }
+}
+$('src').addEventListener('change',onSrc);
+
+function setMode(m){
+  MODE=m;
+  document.querySelectorAll('#seg b').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
+  $('secretsMode').style.display = (m==='youtube')?'none':'block';
+  $('youtubeMode').style.display = (m==='youtube')?'block':'none';
+  if(m==='youtube') return;
+  $('cookieField').style.display = m==='cookie'?'block':'none';
+  $('keyField').style.display = m==='key'?'block':'none';
+  $('srcLbl').textContent = m==='cookie'?'Source site':'Key';
+  // manual runner only makes sense for cookies (browser-only sites)
+  document.querySelector('#runners label[data-r=manual]').style.display = m==='cookie'?'':'none';
+  fillSrc();
+}
+document.querySelectorAll('#seg b').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.m)));
+
+// YouTube wiki-seed mode
+document.querySelectorAll('#ytOpts label').forEach(l=>l.addEventListener('click',()=>{
+  document.querySelectorAll('#ytOpts label').forEach(x=>x.classList.toggle('sel',x===l));
+  l.querySelector('input').checked=true;
+}));
+async function seed(){
+  const url=$('ytUrl').value.trim(), r=$('ytreceipt');
+  if(!/^https?:\/\/.*youtu/.test(url)){ r.className='receipt err'; r.textContent='paste a YouTube video or playlist URL.'; return; }
+  const light=(document.querySelector('#ytOpts input:checked')||{}).value==='light';
+  $('ytseed').disabled=true; r.className='receipt'; r.textContent='';
+  try{
+    const res=await (await fetch('/import/youtube',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,light})})).json();
+    if(res.ok){ r.className='receipt ok'; r.textContent='✓ capturing metadata in the background — seeds appear at right as they land'; $('ytUrl').value=''; setTimeout(loadSeeds,4000); setTimeout(loadSeeds,12000); }
+    else{ r.className='receipt err'; r.textContent='✗ '+(res.error||'failed'); }
+  }catch(e){ r.className='receipt err'; r.textContent='✗ '+e; }
+  $('ytseed').disabled=false;
+}
+$('ytseed').addEventListener('click',seed);
+async function loadSeeds(){
+  let d; try{ d=await (await fetch('/seeds.json',{cache:'no-store'})).json(); }catch(e){ return; }
+  $('seedCount').textContent=d.count?(d.count):'';
+  $('vSeeds').innerHTML=(d.seeds&&d.seeds.length)
+    ? d.seeds.slice(0,14).map(s=>{
+        const cap=(s.captions&&s.captions.length)?'·cc':''; const th=s.thumb?'·🖼':'';
+        return '<div class="vrow has"><span class="dot"></span><span class="nm">'+esc((s.channel||'?').slice(0,16))+'</span>'+
+          '<span class="un">'+esc(s.title||'')+'</span><span class="meta">'+esc((s.date||'').replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3'))+' '+th+cap+'</span></div>';
+      }).join('')
+    : '<div class="hint">none yet — paste a YouTube link to preserve it</div>';
+}
+
+$('cookieFile').addEventListener('change',ev=>{
+  const f=ev.target.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=()=>{ $('cookieVal').value=r.result; }; r.readAsText(f);
+});
+
+async function load(){
+  try{ DATA=await (await fetch('/secrets.json',{cache:'no-store'})).json(); }catch(e){ DATA={cookies:[],keys:[]}; }
+  renderVault(); fillSrc();
+}
+function vrow(s,isCookie){
+  const rn=s.runner||''; const meta=isCookie?(s.present?(s.bytes+' B'):''):'';
+  const kind=isCookie?'cookie':'key';
+  return '<div class="vrow'+(s.present?' has':'')+'"><span class="dot"></span>'+
+    '<span class="nm">'+esc(isCookie?(s.domain||s.id):(s.label||s.id))+'</span>'+
+    '<span class="un" title="'+esc(s.unlocks||'')+'">'+esc(s.unlocks||'')+'</span>'+
+    (meta?'<span class="meta">'+meta+'</span>':'')+
+    '<span class="rn '+rn+'">'+esc(rn)+'</span>'+
+    '<button class="del" data-kind="'+kind+'" data-src="'+esc(s.id)+'" title="remove from vault">delete</button></div>';
+}
+function renderVault(){
+  $('vCookies').innerHTML = DATA.cookies.map(s=>vrow(s,true)).join('')||'<div class="hint">none yet</div>';
+  $('vKeys').innerHTML = DATA.keys.map(s=>vrow(s,false)).join('')||'<div class="hint">none yet</div>';
+  bindDelete();
+}
+async function delSecret(kind,src,btn){
+  if(!src) return;
+  if(!confirm('Delete this '+kind+' ('+src+') from the vault?\nThis removes the stored value and registry entry.')) return;
+  const old=btn.textContent; btn.disabled=true; btn.textContent='…';
+  try{
+    const res=await (await fetch('/secrets/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind,source:src})})).json();
+    if(res.ok){ btn.textContent='✓ gone'; await load(); }
+    else{ btn.textContent='✗ '+(res.error||'failed'); btn.disabled=false; }
+  }catch(e){ btn.textContent='✗ '+e; btn.disabled=false; }
+  setTimeout(()=>{ if(btn) btn.textContent=old; },1800);
+}
+function bindDelete(){
+  document.querySelectorAll('.vrow .del').forEach(b=>b.addEventListener('click',e=>{
+    e.stopPropagation();
+    delSecret(b.getAttribute('data-kind'),b.getAttribute('data-src'),b);
+  }));
+}
+
+async function save(){
+  const isNew=$('src').value==='__new__';
+  const source = isNew ? $('newId').value.trim() : $('src').value;
+  const value = MODE==='cookie' ? $('cookieVal').value : $('keyVal').value.trim();
+  const r=$('receipt');
+  if(!source){ r.className='receipt err'; r.textContent='give the new source an id.'; return; }
+  if(!value){ r.className='receipt err'; r.textContent='paste the '+(MODE==='cookie'?'cookies':'key')+' first.'; return; }
+  const runner=(document.querySelector('#runners input:checked')||{}).value||'';
+  const g=parseInt($('gentle').value,10);
+  const payload={kind:MODE,source,value,runner};
+  if(!isNaN(g)) payload.gentle_sec=g;
+  if(isNew && MODE==='cookie') payload.domain=$('newSec').value.trim();
+  if(isNew && MODE==='key') payload.label=$('newSec').value.trim();
+  $('save').disabled=true; r.className='receipt'; r.textContent='';
+  try{
+    const res=await (await fetch('/secrets/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})).json();
+    if(res.ok){
+      r.className='receipt ok'; r.textContent='✓ saved '+res.kind+' for '+res.source+(res.file?(' → '+res.file):'')+(res.runner?('  ·  runner='+res.runner):'');
+      if(MODE==='cookie') $('cookieVal').value=''; else $('keyVal').value='';
+      await load();
+    }else{ r.className='receipt err'; r.textContent='✗ '+(res.error||'save failed'); }
+  }catch(e){ r.className='receipt err'; r.textContent='✗ '+e; }
+  $('save').disabled=false;
+}
+$('save').addEventListener('click',save);
+
+setMode('cookie'); load(); loadSeeds();
+</script>
+</body></html>
