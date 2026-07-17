@@ -1404,6 +1404,84 @@ function Invoke-SandboxPromote($o) {
     @{ ok = ($errs.Count -eq 0); moved = $moved; errors = @($errs) } | ConvertTo-Json -Depth 4
 }
 
+function Invoke-LibRetrigger($o) {
+    # #111 "re-run pipeline from a card": manual per-work retrigger of the EXISTING ASR -> resegment
+    # -> translate chain (fw_transcribe.py -> resegment_subs.py --translate -> verify_translations.py
+    # -> eta.py -- the same scripts process_creator.py / the overnight arc already call), scoped to
+    # the SPECIFIC selected work ids instead of a whole creator, and always forcing a redo (this is a
+    # retry button, not the skip-if-done batch job those tools normally run). An optional --wiki
+    # checkbox also retries the local-AI wiki research (research_agent.py + local_wiki.py --force)
+    # for the touched creators.
+    #
+    # Mirrors Invoke-LibMutation's shape (id list in, {ok,done,errors} out) but kicks the actual work
+    # off DETACHED (Start-Process, same idiom as Invoke-AiChat) in retrigger_pipeline.py, since a GPU
+    # transcribe run can take minutes-to-hours and must never block this single-threaded listener.
+    # The spawned job writes a standard _jobs/<id>.json record (same shape ai_console.py's launch()
+    # uses) so it shows up in the existing "ai jobs" console panel while it runs.
+    $py = (Get-Command python -ErrorAction SilentlyContinue).Source
+    if (-not $py) { return (@{ ok = $false; error = 'python not found' } | ConvertTo-Json -Compress) }
+    $ids = @($o.ids | ForEach-Object { "$_" } | Where-Object { $_ })
+    if (-not $ids.Count) { return (@{ ok = $false; error = 'no ids' } | ConvertTo-Json -Compress) }
+    $valid = @(); $errs = @()
+    foreach ($id in $ids) {
+        if (Resolve-AudioPath $id) { $valid += $id } else { $errs += "$id (not found)" }
+    }
+    if (-not $valid.Count) { return (@{ ok = $false; error = 'no valid ids'; errors = @($errs) } | ConvertTo-Json -Depth 4 -Compress) }
+    $script = Join-Path $PSScriptRoot 'retrigger_pipeline.py'
+    if (-not (Test-Path -LiteralPath $script)) {
+        # CPU-only core builds ship without the Tier-1 GPU pipeline scripts -- fail clean here rather
+        # than launching a python process that immediately dies and leaves the job stuck "running"
+        # forever (Start-Process itself would still succeed since python.exe exists; only the script
+        # argument is missing, so nothing downstream would ever flip the job's status).
+        return (@{ ok = $false; error = 'retrigger_pipeline.py not present -- needs the GPU comprehension worker package, not included in the CPU-only core' } | ConvertTo-Json -Compress)
+    }
+    $jd = Join-Path $PSScriptRoot '_jobs'; New-Item -ItemType Directory -Force -Path $jd | Out-Null
+    $jid = (Get-Date -Format 'HHmmss') + '-' + ([guid]::NewGuid().ToString('N').Substring(0, 4))
+    $wiki = [bool]$o.wiki
+    $argf = Join-Path $jd "retrig-$jid-args.json"
+    (@{ ids = @($valid); wiki = $wiki; root = (Split-Path $PSScriptRoot -Parent) } | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath $argf -Encoding utf8
+    $names = @($valid | ForEach-Object { [IO.Path]::GetFileNameWithoutExtension(($_ -split '[\\/]')[-1]) })
+    $prompt = 're-run pipeline: ' + ($names -join ', ') + $(if ($wiki) { ' (+ wiki research)' } else { '' })
+    $cmdArgs = @($script, '--file', $argf, '--job', $jid)
+    $meta = [ordered]@{ id = $jid; skill = 'retrigger-pipeline'; args = @{ ids = @($valid); wiki = $wiki }
+        prompt = $prompt; cmd = (@($py) + $cmdArgs); status = 'running'; started = (Get-Date -Format 's'); ended = $null; exit = $null }
+    ($meta | ConvertTo-Json -Depth 6) | Set-Content -LiteralPath (Join-Path $jd "$jid.json") -Encoding utf8
+    '' | Set-Content -LiteralPath (Join-Path $jd "$jid.log") -Encoding utf8
+    try { Start-Process -FilePath $py -ArgumentList $cmdArgs -WindowStyle Hidden | Out-Null }
+    catch { return (@{ ok = $false; error = "$($_.Exception.Message)" } | ConvertTo-Json -Compress) }
+    @{ ok = $true; done = $valid.Count; errors = @($errs); job = $jid } | ConvertTo-Json -Depth 4 -Compress
+}
+
+function Get-TitleOverridesPath { Join-Path (Split-Path $PSScriptRoot -Parent) '_data\title_overrides.json' }
+function Get-TitleOverrides {
+    # #112a per-work title override sidecar -- SEPARATE from _wiki/title_translations.json (that
+    # file is pipeline-owned, rewritten wholesale by translate_titles.py; a user override living
+    # there would get silently clobbered on the next run). { id -> custom display title }.
+    $p = Get-TitleOverridesPath
+    if (Test-Path -LiteralPath $p) {
+        try { $h = @{}; foreach ($pr in (Get-Content -LiteralPath $p -Raw | ConvertFrom-Json).PSObject.Properties) { $h[$pr.Name] = "$($pr.Value)" }; return $h } catch {}
+    }
+    return @{}
+}
+function Save-TitleOverrides($h) {
+    $p = Get-TitleOverridesPath; $d = Split-Path $p -Parent
+    if (-not (Test-Path -LiteralPath $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }
+    ($h | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath $p -Encoding UTF8
+    $script:LibAt = 0   # invalidate the library cache so the new title shows on the next load
+}
+function Invoke-LibTitleOverride($o) {
+    # POST {id, title}. Empty/whitespace title CLEARS the override (reverts to whatever Get-Library
+    # would otherwise show). User-driven only (Manage-mode "edit title" on the detail card).
+    $id = "$($o.id)"
+    if ([string]::IsNullOrWhiteSpace($id)) { return (@{ ok = $false; error = 'no id' } | ConvertTo-Json -Compress) }
+    if (-not (Resolve-AudioPath $id)) { return (@{ ok = $false; error = 'unknown work' } | ConvertTo-Json -Compress) }
+    $h = Get-TitleOverrides
+    $title = "$($o.title)".Trim()
+    if ($title) { $h[$id] = $title } elseif ($h.ContainsKey($id)) { $h.Remove($id) }
+    Save-TitleOverrides $h
+    @{ ok = $true; id = $id; title = $title } | ConvertTo-Json -Compress
+}
+
 function Get-Library {
     # assemble the cover-art library from the audio index + title translations.
     # ~30s cache: rebuilding 300+ records from audio_index.json each request was 119ms/load.
@@ -1563,6 +1641,18 @@ function Get-Library {
             $works = $keep2
         }
     } catch {}
+    # --- #112a per-work title override: a SEPARATE sidecar (_data/title_overrides.json), never
+    # _wiki/title_translations.json (that file is pipeline-owned/rewritten wholesale). Applied last
+    # so it wins over both the base filename and the pipeline's EN translation.
+    try {
+        $ov = Get-TitleOverrides
+        if ($ov.Count) {
+            foreach ($w in $works) {
+                $t = $ov["$($w.id)"]
+                if ($t) { $w.title = "$t"; $w.titleOverridden = $true }
+            }
+        }
+    } catch {}
     # --- sortable date stamp (fixes "New" clustering by creator instead of recency) -------------
     # Community/YouTube works carry the upload date as a leading YYYY-MM-DD prefix in the filename
     # (~38% of the library, incl. nearly every community work). DLsite tracks are 'Track01..' with no
@@ -1578,6 +1668,25 @@ function Get-Library {
             foreach ($seg in ("$($w.id)" -split '\\')) { if ($dlDate.ContainsKey($seg)) { $d = $dlDate[$seg]; break } }
         }
         $w.date = $d
+    }
+    # --- trigger summary (CLAP binaural detection, _data/derived/<Creator>/<stem>/triggers.json): fold
+    # each work's top-3 sound-event classes (by seconds, from triggers.json's `profile`) into the row so
+    # library cards can show event chips without a per-card fetch. Reuses this function's ~30s cache --
+    # absent for most works today (GPU pipeline coverage is partial); those rows just skip `triggers`.
+    $derivedRoot = Join-Path (Split-Path $PSScriptRoot -Parent) '_data\derived'
+    foreach ($w in $works) {
+        if ($w.pending) { continue }
+        $dd = Join-Path $derivedRoot ((Split-Path "$($w.id)" -Parent) + '\' + $w.base)
+        $tp = Join-Path $dd 'triggers.json'
+        if (Test-Path -LiteralPath $tp) {
+            try {
+                $tj = Get-Content -LiteralPath $tp -Raw | ConvertFrom-Json
+                if ($tj.profile) {
+                    $top = $tj.profile.PSObject.Properties | Sort-Object { [double]$_.Value } -Descending | Select-Object -First 3
+                    if ($top) { $w.triggers = @($top | ForEach-Object { [ordered]@{ c = $_.Name; s = [math]::Round([double]$_.Value, 1) } }) }
+                }
+            } catch {}
+        }
     }
     $script:LibCache = $(if ($works.Count) { $works | ConvertTo-Json -Depth 5 -Compress } else { '[]' })
     $script:LibAt = $now
@@ -2951,6 +3060,23 @@ function Start-Server {
                 elseif ($path -eq '/debug') { $body = $DebugShell; $res.ContentType = 'text/html; charset=utf-8' }
                 elseif ($path -eq '/library.json') { $body = $(if ($ctx.Request.QueryString['realm'] -eq 'sandbox') { Get-SandboxLibrary } else { Get-Library }); $res.ContentType = 'application/json; charset=utf-8' }
                 elseif ($path -eq '/library/trash.json') { $body = Get-TrashJson; $res.ContentType = 'application/json; charset=utf-8' }
+                elseif ($path -eq '/library/retrigger' -and $ctx.Request.HttpMethod -eq 'POST') {
+                    # #111 Manage-bar "re-run pipeline": re-triggers ASR->resegment->translate (+ optional
+                    # wiki-research retry) for the selected work(s), detached. User-driven only.
+                    $reader = [IO.StreamReader]::new($ctx.Request.InputStream, $ctx.Request.ContentEncoding)
+                    $raw = $reader.ReadToEnd(); $reader.Close()
+                    $o = $null; try { $o = $raw | ConvertFrom-Json } catch {}
+                    $body = Invoke-LibRetrigger $o
+                    $res.ContentType = 'application/json; charset=utf-8'
+                }
+                elseif ($path -eq '/library/title' -and $ctx.Request.HttpMethod -eq 'POST') {
+                    # #112a per-work title override: POST {id, title} (blank title clears it).
+                    $reader = [IO.StreamReader]::new($ctx.Request.InputStream, $ctx.Request.ContentEncoding)
+                    $raw = $reader.ReadToEnd(); $reader.Close()
+                    $o = $null; try { $o = $raw | ConvertFrom-Json } catch {}
+                    $body = Invoke-LibTitleOverride $o
+                    $res.ContentType = 'application/json; charset=utf-8'
+                }
                 elseif ($path -like '/library/*' -and $ctx.Request.HttpMethod -eq 'POST') {
                     # user-driven library management: hide/unhide/delete(soft)/restore/purge. purge is the only
                     # destructive op and the client gates it behind an explicit confirm. Never autonomous.
@@ -3022,6 +3148,27 @@ function Start-Server {
                         try { $out = & python (Join-Path $PSScriptRoot 'subs_for.py') '--id' $id '--json' 2>$null
                             $line = @($out | Where-Object { $_ -match '^\{' })[0]
                             if ($line) { $body = $line } } catch {}
+                    }
+                    $res.ContentType = 'application/json; charset=utf-8'
+                }
+                elseif ($path -eq '/triggers') {
+                    # CLAP binaural trigger detections for a work's player timeline:
+                    # _data/derived/<Creator>/<stem>/triggers.json (written by the GPU comprehension
+                    # pipeline). id is the audio_index relative key "Creator\file.ext" (same convention
+                    # as /subs); derive the folder the same way Get-Library's DLsite-dedupe pass does.
+                    $id = $ctx.Request.QueryString['id']
+                    $body = '{"durSec":0,"ranges":[],"profile":{}}'
+                    if (-not [string]::IsNullOrWhiteSpace($id)) {
+                        try {
+                            $derivedRoot = Join-Path (Split-Path $PSScriptRoot -Parent) '_data\derived'
+                            $base = [IO.Path]::GetFileNameWithoutExtension(($id -split '[\\/]')[-1])
+                            $dd = [IO.Path]::GetFullPath((Join-Path $derivedRoot ((Split-Path $id -Parent) + '\' + $base)))
+                            $rootFull = [IO.Path]::GetFullPath($derivedRoot).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+                            if ($dd.StartsWith($rootFull, [StringComparison]::OrdinalIgnoreCase)) {   # block ..\ traversal
+                                $tp = Join-Path $dd 'triggers.json'
+                                if (Test-Path -LiteralPath $tp) { $body = Get-Content -LiteralPath $tp -Raw }
+                            }
+                        } catch {}
                     }
                     $res.ContentType = 'application/json; charset=utf-8'
                 }

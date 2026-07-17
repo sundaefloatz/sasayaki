@@ -115,6 +115,13 @@ body{background:var(--bg);color:var(--txt);font:14px/1.5 var(--body);overflow-x:
 .count-label b{color:var(--txt);font-weight:600}
 /* ---- grid ---- */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px 14px}
+/* ---- #112b folder/org view: same Get-Library data, grouped by creator client-side ---- */
+.folder-sec{margin-bottom:30px}
+.folder-h{display:flex;align-items:baseline;gap:9px;margin:0 0 13px;font:700 15px var(--disp);color:var(--txt);padding-bottom:8px;border-bottom:1px solid var(--line)}
+.folder-h a{color:inherit;text-decoration:none}
+.folder-h a:hover{color:var(--pk2);text-decoration:underline}
+.folder-n{font:11px var(--mono);color:var(--dim);font-weight:400}
+#foldersToggle.on{color:#fff;background:var(--pk);border-color:var(--pk)}
 /* ---- card ---- */
 .card{position:relative;cursor:default;transition:transform .25s var(--ease),box-shadow .25s;animation:sasarise .4s var(--ease) both}
 @keyframes sasarise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
@@ -162,6 +169,12 @@ body{background:var(--bg);color:var(--txt);font:14px/1.5 var(--body);overflow-x:
 .tchip.dl::before{content:'◆ ';color:var(--pk);font-size:7px;vertical-align:1px;opacity:.9;margin-right:2px}
 .ctag.b{color:var(--blue)}
 .ctag.t{color:var(--teal)}
+/* trigger-event chips (CLAP binaural detections): these mark TIMED SOUND EVENTS within the work
+   (seconds-per-class), not descriptive genre tags -- so they get their own filled, squared-off badge
+   instead of the tags' transparent pill, with a play-glyph prefix instead of '#'/'◆'. */
+.ctag.trig{background:rgba(245,197,24,.14);border:1px solid rgba(245,197,24,.32);border-radius:5px;color:var(--gold)}
+.ctag.trig::before{content:'▶ ';opacity:.85;margin-right:2px;font-size:8px}
+.ctag.trig:hover{background:rgba(245,197,24,.28);color:var(--gold)}
 .crating{display:flex;align-items:center;gap:5px;margin-top:6px}
 .cstars{color:var(--gold);font-size:11px;letter-spacing:-1px}
 .crate-val{font:10px var(--mono);color:var(--muted)}
@@ -212,9 +225,17 @@ body.tr-open .player.up{right:calc(380px + 18px)}    /* slide out of the open dr
 .pseek{display:flex;align-items:center;gap:8px}
 .ptime{font:10px var(--mono);color:var(--muted);flex:0 0 auto;width:36px}
 .ptime.r{text-align:right}
+.seekwrap{position:relative;flex:1;display:flex;align-items:center}
 .prange{-webkit-appearance:none;appearance:none;flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.12);outline:none;cursor:pointer}
 .prange::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--pk);cursor:pointer;box-shadow:0 0 6px var(--pkg)}
 .prange::-moz-range-thumb{width:12px;height:12px;border:none;border-radius:50%;background:var(--pk);cursor:pointer}
+/* CLAP trigger markers overlaid on the seek track (chapters payoff): tiny gold ticks positioned by
+   t0/durSec, clickable to seek. pointer-events are OFF on the wrap (so drag-scrubbing the range still
+   works) and ON only for the individual ticks. */
+.trigmarks{position:absolute;left:6px;right:6px;top:50%;height:0;pointer-events:none;z-index:2}
+.trigmark{position:absolute;top:50%;width:3px;height:9px;margin-left:-1.5px;transform:translateY(-50%);
+  border-radius:1px;background:var(--gold);opacity:.7;cursor:pointer;pointer-events:auto;transition:.12s}
+.trigmark:hover{opacity:1;height:13px;box-shadow:0 0 5px rgba(245,197,24,.8)}
 .pvol{position:relative;flex:0 0 auto}
 .pbtn.vol{width:22px;height:22px}
 .pbtn.vol svg{width:14px;height:14px}
@@ -329,12 +350,14 @@ body.tr-open .player.up{right:calc(380px + 18px)}    /* slide out of the open dr
     <div class="count-label"><b id="count">…</b> works</div>
     <div class="count-label" style="color:var(--dim)">· click a creator name to open their profile</div>
     <div class="mgmt-tools">
+      <button id="foldersToggle" class="mgbtn" title="group works by creator (?view=folders)">📁 Folders</button>
       <button id="hiddenToggle" class="mgbtn" title="show hidden works">Hidden <i id="hiddenN">0</i></button>
       <button id="trashBtn" class="mgbtn" title="open trash">🗑 Trash <i id="trashN">0</i></button>
       <button id="manageBtn" class="mgbtn" title="select works to hide or delete">⚙ Manage</button>
     </div>
   </div>
   <div class="grid" id="grid"></div>
+  <div id="folders" style="display:none"></div>
   <div class="pager" id="pager" style="display:none"></div>
   <style>
   .pager{display:flex;align-items:center;justify-content:center;gap:14px;margin:18px 0 6px}
@@ -366,13 +389,15 @@ body.tr-open .player.up{right:calc(380px + 18px)}    /* slide out of the open dr
       <div class="pmeta"><div class="pti" id="pti">—</div><div class="pcr" id="pcr"></div></div>
       <div class="pbtns">
         <button class="pbtn" id="prev" title="previous"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zM20 6l-9 6 9 6z"/></svg></button>
+        <button class="pbtn" id="rw" title="back 15s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4 5 9l6 5"/><path d="M5 9h9a6 6 0 1 1 0 12H9"/></svg></button>
         <button class="pbtn big" id="pp" title="play / pause"></button>
+        <button class="pbtn" id="ff" title="forward 15s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 4 6 5-6 5"/><path d="M19 9h-9a6 6 0 1 0 0 12h5"/></svg></button>
         <button class="pbtn" id="next" title="next"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM4 6l9 6-9 6z"/></svg></button>
       </div>
     </div>
     <div class="pseek">
       <span class="ptime" id="cur">0:00</span>
-      <input type="range" class="prange" id="seek" min="0" max="1000" value="0" step="1">
+      <div class="seekwrap"><input type="range" class="prange" id="seek" min="0" max="1000" value="0" step="1"><div class="trigmarks" id="trigmarks"></div></div>
       <span class="ptime r" id="tot">0:00</span>
       <div class="pvol" id="pvol">
         <button class="pbtn vol" id="volbtn" title="mute / unmute"></button>
@@ -422,9 +447,13 @@ body.tr-open .player.up{right:calc(380px + 18px)}    /* slide out of the open dr
 .fpseek{display:flex;align-items:center;gap:11px;width:100%;margin-top:26px}
 .fpseek .ptime{font:11px var(--mono);color:var(--muted);flex:none;width:40px;font-variant-numeric:tabular-nums}
 .fpseek .ptime.r{text-align:right}
+.fpseekwrap{position:relative;flex:1;display:flex;align-items:center}
 .fprange{-webkit-appearance:none;appearance:none;flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.16);outline:none;cursor:pointer}
 .fprange::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--pk);cursor:pointer;box-shadow:0 0 8px var(--pk)}
 .fprange::-moz-range-thumb{width:14px;height:14px;border:none;border-radius:50%;background:var(--pk)}
+.fpseekwrap .trigmarks{left:8px;right:8px}
+.fpseekwrap .trigmark{height:11px}
+.fpseekwrap .trigmark:hover{height:16px}
 .fpctrl{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:22px}
 .fpb{width:48px;height:48px;border-radius:50%;border:1px solid var(--line2);background:transparent;color:var(--txt);
   cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;flex:none}
@@ -478,15 +507,17 @@ body.tr-open .player.up{right:calc(380px + 18px)}    /* slide out of the open dr
     <div class="fpcr" id="fpcr2"></div>
     <div class="fpseek">
       <span class="ptime" id="fpcur">0:00</span>
-      <input type="range" class="fprange" id="fpseek" min="0" max="1000" value="0" step="1">
+      <div class="fpseekwrap"><input type="range" class="fprange" id="fpseek" min="0" max="1000" value="0" step="1"><div class="trigmarks" id="fptrigmarks"></div></div>
       <span class="ptime r" id="fptot">0:00</span>
     </div>
     <div class="fpctrl">
+      <button class="fpb" id="fpshuffle" title="shuffle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 4 4 4-4 4"/><path d="M2 8h5.5a4 4 0 0 1 3.3 1.8L15 16.2A4 4 0 0 0 18.5 18H22"/><path d="m18 20 4-4-4-4"/><path d="M2 4h5.5a4 4 0 0 1 3.3 1.8L11.5 6.5"/><path d="M14.5 17.5 15 18.2"/></svg></button>
       <button class="fpb" id="fpprev" title="previous track"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zM20 6l-9 6 9 6z"/></svg></button>
-      <button class="fpb" id="fprw" title="back 10s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4 5 9l6 5"/><path d="M5 9h9a6 6 0 1 1 0 12H9"/></svg></button>
+      <button class="fpb" id="fprw" title="back 15s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4 5 9l6 5"/><path d="M5 9h9a6 6 0 1 1 0 12H9"/></svg></button>
       <button class="fpb pp" id="fppp" title="play / pause"></button>
-      <button class="fpb" id="fpff" title="forward 10s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 4 6 5-6 5"/><path d="M19 9h-9a6 6 0 1 0 0 12h5"/></svg></button>
+      <button class="fpb" id="fpff" title="forward 15s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 4 6 5-6 5"/><path d="M19 9h-9a6 6 0 1 0 0 12h5"/></svg></button>
       <button class="fpb" id="fpnext" title="next track"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM4 6l9 6-9 6z"/></svg></button>
+      <button class="fpb" id="fprepeat" title="repeat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg><b id="fprepeat1" class="fprepeat1">1</b></button>
     </div>
     <div class="fpvol" id="fpvolrow">
       <button class="fps" id="fpvolbtn" title="mute / unmute"></button>
@@ -569,6 +600,11 @@ body.fp-open #transcript{z-index:75}
 .trnone{color:var(--dim);font-size:12px;padding:24px 16px;text-align:center}
 .pbtn.cc{font:700 10px var(--mono);width:auto;padding:0 8px;letter-spacing:.04px}
 .pbtn.cc.on{color:var(--pk);border-color:var(--pk)}
+.pbtn.on,.fpb.on{color:var(--pk2);border-color:var(--pk)}
+#fprepeat{position:relative}
+.fprepeat1{position:absolute;top:1px;right:1px;font:800 8px var(--mono);line-height:1;background:var(--pk);
+  color:#fff;border-radius:5px;padding:1px 3px;display:none}
+#fprepeat.rep-one .fprepeat1{display:block}
 </style>
 <div id="transcript">
   <div class="trhead"><span id="trttl">transcript</span><span class="trlang" id="trlang"></span><span class="trx" id="trx">&times;</span></div>
@@ -594,6 +630,7 @@ body.fp-open #transcript{z-index:75}
         <button class="dbtn play" id="dplay">&#9654; Play</button>
         <button class="dbtn" id="dadd">+ Playlist</button>
         <a class="dbtn" id="dwiki" target="_blank" rel="noopener">&#128214; Wiki</a>
+        <button class="dbtn" id="dedit" title="set a custom display title for this work">&#9998; Title</button>
       </div>
       <div class="dmenu" id="dmenu"></div>
     </div>
@@ -661,11 +698,15 @@ function cover(cv,w){
 }
 /* ---- utils ---- */
 function fmtDur(s){if(!s)return'';const m=Math.round(s/60);return m>=60?(m/60).toFixed(1)+'h':m+'m';}
+function trigLabel(c){return String(c||'').replace(/-/g,' ');}
 function esc(s){return(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));}
 function tagCls(t){return (/binaural/.test(t)?'b':/quiet|spacious|calm/.test(t)?'t':'')+(typeof DLTAGS!=='undefined'&&DLTAGS.has(t)?' dl':'');}
 function stars(r){if(!r)return'';const f=Math.round(r*2)/2;let o='';for(let i=1;i<=5;i++)o+=i<=f?'★':(i-.5<=f?'⯨':'☆');return o;}
 /* ---- state ---- */
 let ALL=[],activeTag='',SORT='new',LANG=localStorage.getItem('sasa_lang')||'en',QUEUE=[],curId=null,DETW=null,TAGMAP={},VIBEIDS=null;
+// #112b folder/org view: groups the SAME Get-Library data by creator instead of the flat sorted grid.
+// A lightweight ?view=folders query mode on this same /library page (no new page, no new data shape).
+let FOLDERS=(new URLSearchParams(location.search).get('view')==='folders');
 let SHOWN=0,ORDERED=[],SRC={},activeSrc='';const BATCH=24;   // infinite-scroll window + id->platform lookup + source chip state
 // a work's platform: sandbox rows carry it directly (multi-site ingest); core rows resolve via the SRC map.
 const platOf=w=>w.platform||SRC[String(w.id).replace(/\\/g,'/')]||'';
@@ -765,6 +806,15 @@ function setLang(l){LANG=l;localStorage.setItem('sasa_lang',l);
   document.getElementById('q').placeholder=l==='ja'?'検索…  creator: tag: source:':'search…  creator: tag: source:   (~ vibe search · @ find a moment)';
   render();buildSug();renderTagBar();if(DETW)fillDetail(DETW);}
 document.querySelectorAll('#langsw b').forEach(b=>{b.classList.toggle('on',b.getAttribute('data-l')===LANG);b.addEventListener('click',()=>setLang(b.getAttribute('data-l')));});
+/* ---- #112b folders view toggle ---- */
+(function(){const b=document.getElementById('foldersToggle');if(!b)return;
+  b.classList.toggle('on',FOLDERS);
+  b.addEventListener('click',()=>{
+    FOLDERS=!FOLDERS;b.classList.toggle('on',FOLDERS);
+    const u=new URL(location.href);if(FOLDERS)u.searchParams.set('view','folders');else u.searchParams.delete('view');
+    history.replaceState(null,'',u);
+    render();
+  });})();
 /* ---- sort ---- */
 document.querySelectorAll('.sp').forEach(b=>b.addEventListener('click',()=>{
   SORT=b.getAttribute('data-s');
@@ -840,11 +890,49 @@ function render(){
   ORDERED=collapseGroups(sortedList);   // display units: single works + collapsed album/version group cards
   QUEUE=sortedList;                     // playback queue stays FLAT (group cards don't play directly)
   document.getElementById('count').textContent=ORDERED.length;
-  const g=document.getElementById('grid');g.innerHTML='';
-  document.getElementById('empty').style.display=ORDERED.length?'none':'block';
   coverObs.disconnect();
+  if(FOLDERS){renderFolders();return;}
+  const g=document.getElementById('grid');g.innerHTML='';g.style.display='';
+  document.getElementById('folders').style.display='none';
+  document.getElementById('empty').style.display=ORDERED.length?'none':'block';
+  document.getElementById('pager').style.display='';
   SHOWN=0;
   appendMore();
+}
+/* #112b: same ORDERED units render() already computed (filtered/sorted/grouped) -- just bucketed by
+   creator into their own labeled sections instead of one flat infinite-scroll grid. No pagination
+   (folder view is meant for browsing a creator's whole shelf at a glance). */
+function renderFolders(){
+  document.getElementById('grid').style.display='none';
+  document.getElementById('pager').style.display='none';document.getElementById('pager').innerHTML='';
+  const fd=document.getElementById('folders');fd.style.display='';fd.innerHTML='';
+  document.getElementById('empty').style.display=ORDERED.length?'none':'block';
+  if(!ORDERED.length)return;
+  const byCreator={},order=[];
+  for(const u of ORDERED){
+    const c=(u.group?u.rep.creator:u.creator)||'—';
+    if(!byCreator[c]){byCreator[c]=[];order.push(c);}
+    byCreator[c].push(u);
+  }
+  const creators=order.slice().sort((a,b)=>a.localeCompare(b));
+  const frag=document.createDocumentFragment();
+  const arts=[];
+  for(const c of creators){
+    const sec=document.createElement('section');sec.className='folder-sec';
+    const n=byCreator[c].length;
+    sec.innerHTML=`<h3 class="folder-h"><a href="/wiki#${encodeURIComponent(c)}" onclick="event.stopPropagation()">${esc(c)}</a><span class="folder-n">${n} work${n===1?'':'s'}</span></h3>`;
+    const grid=document.createElement('div');grid.className='grid';
+    for(const u of byCreator[c]){
+      const card=u.group?buildGroupCard(u):buildCard(u);
+      arts.push(card.querySelector('.art'));
+      grid.appendChild(card);
+    }
+    sec.appendChild(grid);
+    frag.appendChild(sec);
+  }
+  fd.appendChild(frag);
+  arts.forEach(a=>coverObs.observe(a));
+  markActive();
 }
 /* collapse works sharing a server-assigned group id (grp) into ONE representative unit; groups of <2
    render as the single work. Order follows the already-sorted input (rep = first member seen). */
@@ -862,6 +950,7 @@ function buildCard(w){
   const card=document.createElement('div');card.className='card'+(w.pending?' pending':'')+(w.hidden?' whid':'');card.dataset.id=w.id;
   const ratingHtml=w.rating?`<div class="crating"><span class="cstars">${stars(w.rating)}</span><span class="crate-val">${w.rating.toFixed(1)}</span>${w.dlCount?`<span class="cdl">${(w.dlCount/1000).toFixed(1)}k</span>`:''}</div>`:'';
   const tagsHtml=[...(w.tags||[])].sort((a,b)=>(DLTAGS.has(b)?1:0)-(DLTAGS.has(a)?1:0)).slice(0,4).map(t=>`<span class="ctag ${tagCls(t)}" data-tag="${esc(t)}">${esc(txTag(t))}</span>`).join('');
+  const trigsHtml=(w.triggers||[]).slice(0,3).map(t=>`<span class="ctag trig" title="${esc(trigLabel(t.c))} — ~${fmtDur(t.s)} detected">${esc(trigLabel(t.c))} ${fmtDur(t.s)}</span>`).join('');
   card.innerHTML=`<div class="art">
     <canvas width="320" height="320"></canvas>
     <img class="thumb" alt="" decoding="async">
@@ -875,7 +964,7 @@ function buildCard(w){
     <a class="ccreator" href="/wiki#${encodeURIComponent(w.creator)}" title="${esc(w.creator)} — open profile" onclick="event.stopPropagation()">${esc(w.creator)}</a>
     <div class="ctitle">${esc(titleOf(w))}</div>
     ${ratingHtml}
-    <div class="ctags">${tagsHtml}</div>
+    <div class="ctags">${tagsHtml}${trigsHtml}</div>
     <a class="cwiki" href="/wiki#${encodeURIComponent(w.creator)}/${encodeURIComponent(w.base)}" onclick="event.stopPropagation()">&#128214; wiki</a>
   </div>`;
   const art=card.querySelector('.art');art._w=w;
@@ -1030,6 +1119,8 @@ function buildSug(){const dl=document.getElementById('searchsug');if(!dl)return;
     .actbar .del{color:#ff7a7a;border-color:rgba(241,90,95,.4)}.actbar .del:hover{background:rgba(241,90,95,.12)}
     .actbar .promote{color:#fff;background:var(--pk);border-color:var(--pk)}.actbar .promote:hover{filter:brightness(1.1);background:var(--pk)}
     .actbar .clr{color:var(--dim)}
+    .actbar .wikichk{display:inline-flex;align-items:center;gap:5px;font:600 10px var(--mono);color:var(--muted);padding:0 4px;cursor:pointer;user-select:none}
+    .actbar .wikichk input{cursor:pointer}
     .ovl{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center}
     .ovl.on{display:flex}
     .tmodal{background:var(--surf);border:1px solid var(--line2);border-radius:16px;width:min(560px,92vw);max-height:80vh;display:flex;flex-direction:column;overflow:hidden}
@@ -1052,6 +1143,8 @@ function buildSug(){const dl=document.getElementById('searchsug');if(!dl)return;
   bar.innerHTML=`<span class="n" id="selN">0</span><span class="lbl">selected</span>`+
     (SBX?`<button class="promote" id="aPromote">⤴ To core</button>`:``)+
     (SBX?``:`<button id="aHide">Hide</button><button id="aUnhide" style="display:none">Unhide</button>`)+
+    (SBX?``:`<button id="aRetrig" title="re-run ASR → resegment → translate for the selected work(s), in the background">↻ Re-run</button>`+
+      `<label class="wikichk" title="also retry the local-AI wiki research for these creators"><input type="checkbox" id="aWikiChk"> wiki</label>`)+
     `<button class="del" id="aDel">${SBX?'Dismiss':'Delete'}</button><button class="clr" id="aClr">Clear</button>`;
   document.body.appendChild(bar);
   const ovl=document.createElement('div');ovl.className='ovl';
@@ -1075,6 +1168,17 @@ function buildSug(){const dl=document.getElementById('searchsug');if(!dl)return;
   $('aClr').addEventListener('click',clearSel);
   $('aHide')&&$('aHide').addEventListener('click',async()=>{const ids=[...SEL];if(!ids.length)return;await post('/library/hide',{ids});clearSel();await refresh();});
   $('aUnhide')&&$('aUnhide').addEventListener('click',async()=>{const ids=[...SEL];if(!ids.length)return;await post('/library/unhide',{ids});clearSel();await refresh();});
+  // #111 re-run pipeline: re-triggers ASR → resegment → translate (+ optional wiki research retry)
+  // for the selected work(s). Runs DETACHED server-side (GPU-length job) — this just queues it.
+  $('aRetrig')&&$('aRetrig').addEventListener('click',async()=>{
+    const ids=[...SEL];if(!ids.length)return;
+    const wiki=!!($('aWikiChk')&&$('aWikiChk').checked);
+    if(!confirm('Re-run the ASR → resegment → translate pipeline for '+ids.length+' work'+(ids.length>1?'s':'')+(wiki?' (+ wiki research)':'')+'?\nRuns in the background — a GPU-length job that does not block the page.'))return;
+    const r=await post('/library/retrigger',{ids,wiki});
+    if(r&&r.ok)toast('queued '+r.done+' work'+(r.done===1?'':'s')+' for re-run'+(r.job?' (job '+r.job+')':'')+(r.errors&&r.errors.length?' — '+r.errors.length+' skipped':''));
+    else toast('retrigger failed: '+((r&&r.error)||'unknown error'));
+    clearSel();
+  });
   // sandbox → core promotion: moves the audition (audio + subs + cover) into a core creator folder,
   // where it appears immediately via Get-Library's live-merge and enters the pipeline.
   $('aPromote')&&$('aPromote').addEventListener('click',async()=>{const ids=[...SEL];if(!ids.length)return;
@@ -1151,6 +1255,7 @@ const ICON_PLAY='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l1
 const ICON_PAUSE='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>';
 const ICON_VOL='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 5V4L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 const ICON_VOL_MUTE='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 5V4L8 9H4z"/><path d="M16 8l5 8M21 8l-5 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+const SEEK_STEP=15;   // rewind/forward step, seconds (user pick 2026-07-16)
 const au=document.getElementById('au'),pl=document.getElementById('player');
 const $=id=>document.getElementById(id);
 function fmtT(s){s=Math.max(0,s|0);const m=(s/60)|0,ss=s%60;return m+':'+(ss<10?'0':'')+ss;}
@@ -1161,7 +1266,7 @@ function playWork(w){if(!w)return;curId=w.id;
   au.src='/audio?id='+encodeURIComponent(w.id);au.play().catch(()=>{});
   pl.classList.add('up');$('pti').textContent=titleOf(w);$('pcr').textContent=w.creator;
   $('tot').textContent=w.dur?fmtT(w.dur):'0:00';$('cur').textContent='0:00';$('seek').value=0;
-  cover($('pcov'),w);markActive();loadSubs(w);refreshFull(w);
+  cover($('pcov'),w);markActive();loadSubs(w);loadTriggers(w);refreshFull(w);
   if(tdOpen){const nk=productKey(w.id)||'__queue__';   // rebuild only if the sibling group changed; else just move the highlight
     if(nk!==tdKey)buildTrackList();
     else document.querySelectorAll('#tdbody .tdrow').forEach(r=>r.classList.toggle('on',r.getAttribute('data-id')===curId));}}
@@ -1264,11 +1369,64 @@ function syncCue(){if(!CUES.length)return;var t=au.currentTime,lo=0,hi=CUES.leng
 function toggleCC(){ccOpen=!ccOpen;$('transcript').classList.toggle('up',ccOpen);$('ccbtn').classList.toggle('on',ccOpen);
   document.body.classList.toggle('tr-open',ccOpen);   /* drives the mini-player slide-out so it isn't covered by the drawer */
   if(ccOpen&&curCue>=0){var r=$('trbody').children[curCue];if(r)r.scrollIntoView({block:'center'});}}
-function step(d){const i=curIndex();if(i<0){if(QUEUE.length)playWork(QUEUE[0]);return;}playWork(QUEUE[(i+d+QUEUE.length)%QUEUE.length]);}
+/* ---- CLAP trigger markers on the seek track (chapters payoff): fetch ranges for the playing work
+   and render tiny clickable ticks positioned t0/durSec along BOTH scrub bars (mini + full player). ---- */
+var TRIGS=[],TRIGDUR=0;
+function loadTriggers(w){
+  TRIGS=[];TRIGDUR=w.dur||0;renderTrigMarks();
+  fetch('/triggers?id='+encodeURIComponent(w.id)).then(r=>r.json()).then(d=>{
+    if(w.id!==curId)return;   // a later track already started loading before this one resolved
+    TRIGS=Array.isArray(d.ranges)?d.ranges:[];TRIGDUR=d.durSec||w.dur||0;renderTrigMarks();
+  }).catch(()=>{TRIGS=[];renderTrigMarks();});
+}
+function renderTrigMarks(){
+  const html=(TRIGDUR>0&&TRIGS.length)?TRIGS.map(r=>{
+    const pct=Math.max(0,Math.min(100,(r.t0||0)/TRIGDUR*100));
+    return `<span class="trigmark" style="left:${pct.toFixed(3)}%" data-t="${r.t0||0}" title="${esc(trigLabel(r.c))} · ${hhmmss(r.t0||0)}"></span>`;
+  }).join(''):'';
+  $('trigmarks').innerHTML=html;$('fptrigmarks').innerHTML=html;
+}
+function seekToMark(e){
+  const m=e.target.closest('.trigmark');if(!m)return;e.stopPropagation();
+  const t=parseFloat(m.getAttribute('data-t'))||0;try{au.currentTime=t;}catch(err){}
+}
+$('trigmarks').addEventListener('click',seekToMark);
+$('fptrigmarks').addEventListener('click',seekToMark);
+/* ---- shuffle + repeat (persisted like volume) ---- */
+let SHUFFLE=localStorage.getItem('sasa_shuffle')==='1';
+let REPEAT=localStorage.getItem('sasa_repeat')||'all';   // 'off' | 'all' | 'one'
+let shufOrder=[],shufPos=-1;
+const SHUF_BTNS=['fpshuffle'],REPEAT_BTNS=['fprepeat'];
+function buildShufOrder(){shufOrder=QUEUE.map((_,i)=>i);
+  for(let i=shufOrder.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[shufOrder[i],shufOrder[j]]=[shufOrder[j],shufOrder[i]];}
+  shufPos=shufOrder.indexOf(curIndex());}
+function shufIcon(){SHUF_BTNS.forEach(id=>{const b=$(id);if(b)b.classList.toggle('on',SHUFFLE);});}
+function repeatIcon(){REPEAT_BTNS.forEach(id=>{const b=$(id);if(!b)return;b.classList.toggle('on',REPEAT!=='off');b.classList.toggle('rep-one',REPEAT==='one');});}
+function setShuffle(v){SHUFFLE=v;localStorage.setItem('sasa_shuffle',v?'1':'0');if(v)buildShufOrder();shufIcon();}
+function setRepeat(v){REPEAT=v;localStorage.setItem('sasa_repeat',v);repeatIcon();}
+function cycleRepeat(){setRepeat(REPEAT==='off'?'all':REPEAT==='all'?'one':'off');}
+shufIcon();repeatIcon();
+function seekBy(d){if(au.duration)au.currentTime=Math.max(0,Math.min(au.duration,au.currentTime+d));}
+function step(d){
+  if(!QUEUE.length)return;
+  if(SHUFFLE){
+    if(shufOrder.length!==QUEUE.length)buildShufOrder();
+    shufPos=(shufPos+d+shufOrder.length)%shufOrder.length;
+    playWork(QUEUE[shufOrder[shufPos]]);return;
+  }
+  const i=curIndex();if(i<0){playWork(QUEUE[0]);return;}
+  playWork(QUEUE[(i+d+QUEUE.length)%QUEUE.length]);
+}
 $('pp').addEventListener('click',()=>{if(au.paused){if(!au.src&&QUEUE.length)playWork(QUEUE[0]);else au.play().catch(()=>{});}else au.pause();});
 $('prev').addEventListener('click',()=>step(-1));$('next').addEventListener('click',()=>step(1));
+$('rw').addEventListener('click',()=>seekBy(-SEEK_STEP));$('ff').addEventListener('click',()=>seekBy(SEEK_STEP));
 au.addEventListener('play',ppIcon);au.addEventListener('pause',ppIcon);
-au.addEventListener('ended',()=>{if(sleepEot){sleepEot=false;setSleep(0);return;}step(1);});   // EOT: stop after this track
+au.addEventListener('ended',()=>{
+  if(sleepEot){sleepEot=false;setSleep(0);return;}   // EOT: stop after this track
+  if(REPEAT==='one'){au.currentTime=0;au.play().catch(()=>{});return;}
+  if(REPEAT==='off'){const atEnd=SHUFFLE?(shufPos>=shufOrder.length-1):(curIndex()>=QUEUE.length-1);if(atEnd)return;}
+  step(1);
+});
 au.addEventListener('loadedmetadata',()=>{if(isFinite(au.duration))$('tot').textContent=fmtT(au.duration);});
 const seek=$('seek');let seeking=false;
 au.addEventListener('timeupdate',()=>{if(seeking||!au.duration)return;$('cur').textContent=fmtT(au.currentTime);seek.value=Math.round(au.currentTime/au.duration*1000);});
@@ -1286,8 +1444,9 @@ au.addEventListener('timeupdate',()=>{if(seeking||!au.duration)return;
   $('fpcur').textContent=fmtT(au.currentTime);fpseekEl.value=Math.round(au.currentTime/au.duration*1000);});
 $('fppp').addEventListener('click',()=>{if(au.paused){if(!au.src&&QUEUE.length)playWork(QUEUE[0]);else au.play().catch(()=>{});}else au.pause();});
 $('fpprev').addEventListener('click',()=>step(-1));$('fpnext').addEventListener('click',()=>step(1));
-$('fprw').addEventListener('click',()=>{if(au.duration)au.currentTime=Math.max(0,au.currentTime-10);});
-$('fpff').addEventListener('click',()=>{if(au.duration)au.currentTime=Math.min(au.duration,au.currentTime+10);});
+$('fprw').addEventListener('click',()=>seekBy(-SEEK_STEP));$('fpff').addEventListener('click',()=>seekBy(SEEK_STEP));
+$('fpshuffle').addEventListener('click',()=>setShuffle(!SHUFFLE));
+$('fprepeat').addEventListener('click',cycleRepeat);
 fpseekEl.addEventListener('input',()=>{seeking=true;if(au.duration)$('fpcur').textContent=fmtT(au.duration*fpseekEl.value/1000);});
 fpseekEl.addEventListener('change',()=>{if(au.duration)au.currentTime=au.duration*fpseekEl.value/1000;seeking=false;});
 $('fpclose').addEventListener('click',closeFull);
@@ -1365,7 +1524,10 @@ document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;
   else if(e.code==='ArrowRight')step(1);else if(e.code==='ArrowLeft')step(-1);
   else if(e.code==='ArrowUp'){e.preventDefault();volSet(au.volume+.05);}
   else if(e.code==='ArrowDown'){e.preventDefault();volSet(au.volume-.05);}
-  else if(e.code==='KeyM'){au.muted=!au.muted;volIcon();}});
+  else if(e.code==='KeyM'){au.muted=!au.muted;volIcon();}
+  else if(e.code==='KeyJ')seekBy(-SEEK_STEP);else if(e.code==='KeyL')seekBy(SEEK_STEP);   // YouTube-style seek
+  else if(e.code==='KeyS')setShuffle(!SHUFFLE);
+  else if(e.code==='KeyR')cycleRepeat();});
 /* ---- external player ---- */
 const pext=$('pext');
 function streamURL(){return location.origin+'/audio?id='+encodeURIComponent(curId);}
@@ -1405,6 +1567,20 @@ $('dx').onclick=()=>modal('detail',false);
 $('detail').onclick=e=>{if(e.target.id==='detail')modal('detail',false);};
 $('dplay').onclick=()=>{if(DETW){playWork(DETW);modal('detail',false);}};
 $('dadd').onclick=()=>{renderAddMenu();$('dmenu').classList.toggle('show');};
+// #112a per-work title override: a small sidecar (_data/title_overrides.json, server-side) that
+// Get-Library prefers over the pipeline's title_translations.json. Blank input clears it.
+$('dedit').onclick=async()=>{
+  if(!DETW)return;
+  const t=prompt('Custom display title for this work (blank clears the override):',DETW.title||'');
+  if(t===null)return;
+  const r=await fetch('/library/title',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:DETW.id,title:t.trim()})}).then(x=>x.json()).catch(()=>null);
+  if(r&&r.ok){
+    toast(t.trim()?'title updated':'title override cleared');
+    ALL=await fetch((window.realmUrl?window.realmUrl('/library.json'):'/library.json'),{cache:'no-store'}).then(x=>x.json());
+    render();
+    const w=ALL.find(x=>x.id===DETW.id);if(w)fillDetail(w);
+  }else toast('could not update title'+(r&&r.error?': '+r.error:''));
+};
 function renderAddMenu(){const pls=plLoad();let h='';Object.keys(pls).forEach(n=>{h+=`<b data-pl="${esc(n)}">+ ${esc(n)} <small>(${pls[n].length})</small></b>`;});h+='<b data-new="1">+ New playlist…</b>';$('dmenu').innerHTML=h;
   $('dmenu').querySelectorAll('b').forEach(b=>b.onclick=()=>{if(b.getAttribute('data-new')){const n=prompt('Playlist name:');if(n)addTo(n.trim(),DETW);}else addTo(b.getAttribute('data-pl'),DETW);$('dmenu').classList.remove('show');});}
 /* ---- playlists ---- */
