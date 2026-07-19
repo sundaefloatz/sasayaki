@@ -1262,11 +1262,20 @@ function fmtT(s){s=Math.max(0,s|0);const m=(s/60)|0,ss=s%60;return m+':'+(ss<10?
 function curIndex(){return QUEUE.findIndex(w=>w.id===curId);}
 function markActive(){document.querySelectorAll('.card').forEach(c=>c.classList.toggle('active',c.dataset.id===curId));}
 function ppIcon(){$('pp').innerHTML=au.paused?ICON_PLAY:ICON_PAUSE;}
+/* ---- Media Session API: metadata for OS/lock-screen/notification "now playing" widgets ---- */
+function mediaArtwork(w){return(w&&w.thumb)?[{src:w.thumb,sizes:'512x512'}]:[];}
+function syncMediaSession(w){
+  if(!('mediaSession' in navigator)||!w)return;
+  try{
+    navigator.mediaSession.metadata=new MediaMetadata({
+      title:titleOf(w),artist:w.creator||'',album:'Sasayaki',artwork:mediaArtwork(w)});
+  }catch(e){}
+}
 function playWork(w){if(!w)return;curId=w.id;
   au.src='/audio?id='+encodeURIComponent(w.id);au.play().catch(()=>{});
   pl.classList.add('up');$('pti').textContent=titleOf(w);$('pcr').textContent=w.creator;
   $('tot').textContent=w.dur?fmtT(w.dur):'0:00';$('cur').textContent='0:00';$('seek').value=0;
-  cover($('pcov'),w);markActive();loadSubs(w);loadTriggers(w);refreshFull(w);
+  cover($('pcov'),w);markActive();loadSubs(w);loadTriggers(w);refreshFull(w);syncMediaSession(w);
   if(tdOpen){const nk=productKey(w.id)||'__queue__';   // rebuild only if the sibling group changed; else just move the highlight
     if(nk!==tdKey)buildTrackList();
     else document.querySelectorAll('#tdbody .tdrow').forEach(r=>r.classList.toggle('on',r.getAttribute('data-id')===curId));}}
@@ -1435,6 +1444,25 @@ seek.addEventListener('change',()=>{if(au.duration)au.currentTime=au.duration*se
 au.addEventListener('timeupdate',syncCue);
 $('ccbtn').addEventListener('click',toggleCC);$('trx').addEventListener('click',toggleCC);
 ppIcon();
+/* ---- Media Session API: hardware media keys, lock-screen controls, notification-shade mini
+   player (Bluetooth headset buttons route through the same OS layer). Guarded since the API
+   isn't universal; each handler is wrapped since browsers may not support every action type. ---- */
+if('mediaSession' in navigator){
+  const msSet=(action,fn)=>{try{navigator.mediaSession.setActionHandler(action,fn);}catch(e){}};
+  msSet('play',()=>{if(!au.src&&QUEUE.length)playWork(QUEUE[0]);else au.play().catch(()=>{});});
+  msSet('pause',()=>au.pause());
+  msSet('previoustrack',()=>step(-1));
+  msSet('nexttrack',()=>step(1));
+  msSet('seekbackward',()=>seekBy(-SEEK_STEP));
+  msSet('seekforward',()=>seekBy(SEEK_STEP));
+  msSet('seekto',e=>{if(au.duration&&e&&e.seekTime!=null)au.currentTime=Math.max(0,Math.min(au.duration,e.seekTime));});
+  au.addEventListener('play',()=>{navigator.mediaSession.playbackState='playing';});
+  au.addEventListener('pause',()=>{navigator.mediaSession.playbackState='paused';});
+  au.addEventListener('timeupdate',()=>{
+    if(!isFinite(au.duration)||au.duration<=0)return;
+    try{navigator.mediaSession.setPositionState({duration:au.duration,playbackRate:au.playbackRate||1,position:Math.min(au.currentTime,au.duration)});}catch(e){}
+  });
+}
 /* ---- full-player wiring: shares the one #au element + QUEUE/step, mirrors the mini controls ---- */
 const fpseekEl=$('fpseek');
 au.addEventListener('play',()=>{fpPpIcon();au.classList.add('playing');});
