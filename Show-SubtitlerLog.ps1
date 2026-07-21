@@ -1695,7 +1695,7 @@ function Get-Library {
             } catch {}
         }
     }
-    $script:LibCache = $(if ($works.Count) { $works | ConvertTo-Json -Depth 5 -Compress } else { '[]' })
+    $script:LibCache = $(if ($works.Count) { $works | ConvertTo-Json -Depth 5 -Compress -AsArray } else { '[]' })
     $script:LibAt = $now
     $script:LibCache
 }
@@ -1758,7 +1758,7 @@ function Get-SandboxLibrary {
             }
         }
     }
-    $script:SbxLibCache = $(if ($works.Count) { $works | ConvertTo-Json -Depth 5 -Compress } else { '[]' })
+    $script:SbxLibCache = $(if ($works.Count) { $works | ConvertTo-Json -Depth 5 -Compress -AsArray } else { '[]' })
     $script:SbxLibAt = $now
     $script:SbxLibCache
 }
@@ -1791,7 +1791,7 @@ function Get-SandboxWikiIndex {
             }
         }
     }
-    $json = if ($out.Count) { ($out | Sort-Object { -$_.notes }) | ConvertTo-Json -Depth 6 -Compress } else { '[]' }
+    $json = if ($out.Count) { ($out | Sort-Object { -$_.notes }) | ConvertTo-Json -Depth 6 -Compress -AsArray } else { '[]' }
     $script:SbxWikiCache = $json; $script:SbxWikiAt = [Environment]::TickCount64
     return $json
 }
@@ -1841,7 +1841,7 @@ function Get-WikiIndex {
         $pfp = Test-Path -LiteralPath (Join-Path (Split-Path $PSScriptRoot -Parent) (Join-Path $cd.Name '_avatar.jpg'))
         $out.Add([ordered]@{ creator = $cd.Name; notes = $notes.Count; profile = $hasP; overview = $hasO; pfp = $pfp; works = @($works) })
     }
-    $json = if ($out.Count) { ($out | Sort-Object { -$_.notes }) | ConvertTo-Json -Depth 6 -Compress } else { '[]' }
+    $json = if ($out.Count) { ($out | Sort-Object { -$_.notes }) | ConvertTo-Json -Depth 6 -Compress -AsArray } else { '[]' }
     $script:WikiIdxCache = $json; $script:WikiIdxAt = [Environment]::TickCount64
     return $json
 }
