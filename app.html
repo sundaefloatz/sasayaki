@@ -215,13 +215,14 @@ loadLibrary();
 function curIndex(){return QUEUE.findIndex(w=>w.id===curId);}
 function markActive(){}   // no grid here to highlight -- shell has no card list
 function ppIcon(){$('pp').innerHTML=au.paused?ICON_PLAY:ICON_PAUSE;$('fppp').innerHTML=au.paused?ICON_PLAY:ICON_PAUSE;}
-function cover(cv,w){   // minimal mini-player cover: monogram on a per-creator hue (mirrors library.html's fallback)
+function cover(cv,w){   // mini-player cover: monogram immediately, real thumb drawn over it once loaded
   const ctx=cv.getContext('2d'),W=cv.width,H=cv.height,cr=(w&&w.creator)||'';
   let h=0;for(let i=0;i<cr.length;i++)h=(h*31+cr.charCodeAt(i))%360;
   ctx.fillStyle='hsl('+h+',40%,18%)';ctx.fillRect(0,0,W,H);
   ctx.fillStyle='hsl('+h+',55%,72%)';ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.font='700 '+Math.round(W*.4)+'px ui-sans-serif,system-ui,sans-serif';
   ctx.fillText((cr.trim()[0]||'♪'),W/2,H/2+W*.02);
+  if(w&&w.thumb){const im=new Image();im.onload=()=>{if(curId===w.id)ctx.drawImage(im,0,0,W,H);};im.src=w.thumb;}
 }
 function mediaArtwork(w){return(w&&w.thumb)?[{src:w.thumb,sizes:'512x512'}]:[];}
 function syncMediaSession(w){

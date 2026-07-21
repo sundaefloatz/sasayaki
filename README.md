@@ -7,6 +7,17 @@ pipeline that grows into it**
 
 `browse → play → search → tag → organize` · runs on a Raspberry Pi · zero GPU required
 
+![PowerShell 7+](https://img.shields.io/badge/PowerShell-7%2B-5391FE?logo=powershell&logoColor=white)
+![Docker ready](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
+![CPU only](https://img.shields.io/badge/GPU-not%20required-444)
+![100%25 local](https://img.shields.io/badge/cloud-none-e75a7c)
+![MIT](https://img.shields.io/badge/license-MIT-97ca00)
+
+<img src="docs/library-grid.png" alt="Sasayaki library — cover grid with tags and trigger chips" width="900">
+
+*Point it at a folder of audio you already own. Get a real library: covers, bilingual titles,
+acoustic tags, and per-work sound-event chips — all built locally by the included CPU-only indexers.*
+
 </div>
 
 ---
@@ -58,6 +69,22 @@ just picks it up. Nothing about running the core requires the worker to exist.
 
 Every GPU-only feature **degrades gracefully** — the route returns an empty result instead of
 erroring, so the core UI never crashes because the worker isn't running.
+
+## screenshots
+
+> All screenshots show a **synthetic demo library** (generated sine-wave audio, fictional creators,
+> hand-written demo subtitles) — not real works.
+
+**Full player — bilingual subtitle drawer + trigger timeline.** Synced JA/EN cues with SFX rendered
+as stage directions; the yellow ticks on the seek bar are detected sound-event regions (whispering,
+ear-cleaning, liquid…) you can jump straight to:
+
+<img src="docs/fullplayer-subtitles.png" alt="Full player with bilingual subtitle drawer and trigger markers on the seek bar" width="900">
+
+**The persistent player (`/app`).** The mini player lives in a thin shell around the whole app —
+navigate anywhere (library, wiki, discover, settings) and playback never stops:
+
+<img src="docs/persistent-shell.png" alt="Persistent mini player floating over the library page" width="900">
 
 ## quickstart
 
