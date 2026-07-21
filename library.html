@@ -300,6 +300,10 @@ body.tr-open .player.up{right:calc(380px + 18px)}    /* slide out of the open dr
 .plnew button{background:var(--pk);color:#fff;border:0;border-radius:var(--r);padding:0 15px;font:700 12px var(--mono);cursor:pointer;letter-spacing:.04em}
 .plnew button:hover{background:var(--pk2)}
 .pempty{color:var(--dim);font:12px var(--mono);padding:10px 0}
+/* embedded inside app.html's persistent shell (see realm.js) -- the shell owns playback, so hide
+   this page's own player entirely instead of running a second, redundant one underneath it. */
+html[data-embedded="1"] #player,html[data-embedded="1"] #fullplayer,
+html[data-embedded="1"] #trackdrawer,html[data-embedded="1"] #transcript{display:none!important}
 </style></head><body>
 <!-- ambient accent wash (behind everything, pointer-events:none) -->
 <div id="amb"><div class="wash"></div><div class="dots"></div></div>
@@ -379,8 +383,6 @@ body.tr-open .player.up{right:calc(380px + 18px)}    /* slide out of the open dr
   <div class="empty" id="empty" style="display:none">no works match that filter</div>
   <div class="foot">SASAYAKI//囁き · 100% local · click cover to play · click card for details</div>
 </div>
-<!-- hidden audio element -->
-<audio id="au" preload="none"></audio>
 <!-- bottom player bar (docked mini-player, bottom-right) -->
 <div class="player" id="player">
   <div class="pwrap">
@@ -393,6 +395,7 @@ body.tr-open .player.up{right:calc(380px + 18px)}    /* slide out of the open dr
         <button class="pbtn big" id="pp" title="play / pause"></button>
         <button class="pbtn" id="ff" title="forward 15s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 4 6 5-6 5"/><path d="M19 9h-9a6 6 0 1 0 0 12h5"/></svg></button>
         <button class="pbtn" id="next" title="next"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM4 6l9 6-9 6z"/></svg></button>
+        <button class="pbtn" id="shuffle" title="shuffle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 4 4 4-4 4"/><path d="M2 8h5.5a4 4 0 0 1 3.3 1.8L15 16.2A4 4 0 0 0 18.5 18H22"/><path d="m18 20 4-4-4-4"/><path d="M2 4h5.5a4 4 0 0 1 3.3 1.8L11.5 6.5"/><path d="M14.5 17.5 15 18.2"/></svg></button>
       </div>
     </div>
     <div class="pseek">
@@ -434,12 +437,15 @@ body.tr-open .player.up{right:calc(380px + 18px)}    /* slide out of the open dr
   display:flex;align-items:center;justify-content:center;transition:.15s}
 .fpx:hover{background:rgba(0,0,0,.55)}.fpx svg{width:20px;height:20px}
 .fpmain{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;width:100%;max-width:440px}
-.fpcov{width:min(64vw,300px);aspect-ratio:1;border-radius:16px;overflow:hidden;background:#15151f;
+.fpcov{position:relative;width:min(64vw,300px);aspect-ratio:1;border-radius:16px;overflow:hidden;background:#15151f;
   box-shadow:0 0 40px var(--fpglow,rgba(228,64,95,.25)),0 12px 40px rgba(0,0,0,.6);
   transition:box-shadow .5s var(--ease),transform .3s var(--ease)}
-.fpcov img{width:100%;height:100%;object-fit:cover;display:block}
+/* video (#au) sits permanently underneath the cover-art img -- never reparented, only the img's
+   visibility toggles per work (audio-kind: img covers it; video-kind: img hidden, video shows). */
+.fpcov video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.fpcov img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .fpcov canvas{width:100%;height:100%;display:block}
-#au.playing ~ #fullplayer .fpcov{transform:scale(1)}
+.fpcov.playing{transform:scale(1)}
 .fpti{font:700 clamp(17px,4.5vw,23px)/1.3 "Noto Serif JP",var(--disp);color:#fff;text-align:center;margin-top:26px;
   max-width:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .fpcr{font:600 12px var(--mono);color:var(--pk2);text-transform:uppercase;letter-spacing:.08em;margin-top:9px;cursor:pointer}
@@ -502,7 +508,7 @@ body.tr-open .player.up{right:calc(380px + 18px)}    /* slide out of the open dr
     <button class="fpx" id="fpcc2" title="subtitles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 11h2M7 14h4M13 11h4M15 14h2"/></svg></button>
   </div>
   <div class="fpmain">
-    <div class="fpcov" id="fpcov"><img id="fpcovimg" alt=""></div>
+    <div class="fpcov" id="fpcov"><video id="au" preload="none" playsinline></video><img id="fpcovimg" alt=""></div>
     <div class="fpti" id="fpti2">—</div>
     <div class="fpcr" id="fpcr2"></div>
     <div class="fpseek">
@@ -1271,7 +1277,12 @@ function syncMediaSession(w){
       title:titleOf(w),artist:w.creator||'',album:'Sasayaki',artwork:mediaArtwork(w)});
   }catch(e){}
 }
-function playWork(w){if(!w)return;curId=w.id;
+function playWork(w){if(!w)return;
+  if(window.SASA_EMBEDDED){   // loaded inside app.html's persistent shell -- let it own playback
+    window.top.postMessage({sasa:true,type:'play',id:w.id,queueIds:QUEUE.map(x=>x.id)},location.origin);
+    return;
+  }
+  curId=w.id;
   au.src='/audio?id='+encodeURIComponent(w.id);au.play().catch(()=>{});
   pl.classList.add('up');$('pti').textContent=titleOf(w);$('pcr').textContent=w.creator;
   $('tot').textContent=w.dur?fmtT(w.dur):'0:00';$('cur').textContent='0:00';$('seek').value=0;
@@ -1309,7 +1320,10 @@ function refreshFull(w){
   $('fpti2').textContent=titleOf(w);$('fpcr2').textContent=w.creator;
   $('fptot').textContent=w.dur?fmtT(w.dur):'0:00';
   const img=$('fpcovimg'),bg=$('fpbg');
-  if(w.thumb){img.src=w.thumb;img.style.display='';bg.style.backgroundImage=`url("${w.thumb}")`;}
+  if(w.kind==='video'){   // let the real video show through instead of a static cover frame
+    img.removeAttribute('src');img.style.display='none';
+    bg.style.backgroundImage=w.thumb?`url("${w.thumb}")`:'';
+  }else if(w.thumb){img.src=w.thumb;img.style.display='';bg.style.backgroundImage=`url("${w.thumb}")`;}
   else{img.removeAttribute('src');img.style.display='none';bg.style.backgroundImage='';}
   domColor(w,col=>{
     // glow uses the colour at low alpha; store on the cover element
@@ -1405,7 +1419,7 @@ $('fptrigmarks').addEventListener('click',seekToMark);
 let SHUFFLE=localStorage.getItem('sasa_shuffle')==='1';
 let REPEAT=localStorage.getItem('sasa_repeat')||'all';   // 'off' | 'all' | 'one'
 let shufOrder=[],shufPos=-1;
-const SHUF_BTNS=['fpshuffle'],REPEAT_BTNS=['fprepeat'];
+const SHUF_BTNS=['fpshuffle','shuffle'],REPEAT_BTNS=['fprepeat'];
 function buildShufOrder(){shufOrder=QUEUE.map((_,i)=>i);
   for(let i=shufOrder.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[shufOrder[i],shufOrder[j]]=[shufOrder[j],shufOrder[i]];}
   shufPos=shufOrder.indexOf(curIndex());}
@@ -1465,8 +1479,8 @@ if('mediaSession' in navigator){
 }
 /* ---- full-player wiring: shares the one #au element + QUEUE/step, mirrors the mini controls ---- */
 const fpseekEl=$('fpseek');
-au.addEventListener('play',()=>{fpPpIcon();au.classList.add('playing');});
-au.addEventListener('pause',()=>{fpPpIcon();au.classList.remove('playing');});
+au.addEventListener('play',()=>{fpPpIcon();au.classList.add('playing');$('fpcov').classList.add('playing');});
+au.addEventListener('pause',()=>{fpPpIcon();au.classList.remove('playing');$('fpcov').classList.remove('playing');});
 au.addEventListener('loadedmetadata',()=>{if(isFinite(au.duration))$('fptot').textContent=fmtT(au.duration);});
 au.addEventListener('timeupdate',()=>{if(seeking||!au.duration)return;
   $('fpcur').textContent=fmtT(au.currentTime);fpseekEl.value=Math.round(au.currentTime/au.duration*1000);});
@@ -1474,6 +1488,7 @@ $('fppp').addEventListener('click',()=>{if(au.paused){if(!au.src&&QUEUE.length)p
 $('fpprev').addEventListener('click',()=>step(-1));$('fpnext').addEventListener('click',()=>step(1));
 $('fprw').addEventListener('click',()=>seekBy(-SEEK_STEP));$('fpff').addEventListener('click',()=>seekBy(SEEK_STEP));
 $('fpshuffle').addEventListener('click',()=>setShuffle(!SHUFFLE));
+$('shuffle').addEventListener('click',()=>setShuffle(!SHUFFLE));
 $('fprepeat').addEventListener('click',cycleRepeat);
 fpseekEl.addEventListener('input',()=>{seeking=true;if(au.duration)$('fpcur').textContent=fmtT(au.duration*fpseekEl.value/1000);});
 fpseekEl.addEventListener('change',()=>{if(au.duration)au.currentTime=au.duration*fpseekEl.value/1000;seeking=false;});

@@ -28,6 +28,33 @@
   document.documentElement.dataset.realm = realm;
   window.SASA_REALM = realm;
 
+  // --- persistent player shell (/app) detection --------------------------------------------------
+  // True when this page is loaded inside app.html's iframe rather than opened directly. Pages don't
+  // change their own rendering based on this (nav/content stay identical either way) -- it only
+  // gates the play-link interceptor just below, so a click starts playback in the shell's persistent
+  // <video> instead of navigating away from the page (and killing whatever's already playing).
+  // Set on <html> synchronously (same timing as data-realm/data-theme above) so a page that needs to
+  // hide its OWN player when embedded (library.html) can do it via CSS with no flash-of-local-player.
+  window.SASA_EMBEDDED = (window.self !== window.top);
+  if (window.SASA_EMBEDDED) document.documentElement.dataset.embedded = '1';
+
+  // Delegated click intercept: when embedded, a click on any "/library?play=<id>" link (the existing
+  // cross-page deep-link convention already used by discover/wiki/home) posts a play request to the
+  // shell instead of navigating the iframe to /library. Modifier/middle clicks are left alone so
+  // "open in new tab" etc. keep working. The href itself is untouched -- this is purely a click-time
+  // intercept, so standalone access (not embedded) and right-click/copy-link are unaffected.
+  if (window.SASA_EMBEDDED) {
+    document.addEventListener('click', function (e) {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      var a = e.target.closest('a[href^="/library?play="]');
+      if (!a) return;
+      var id = new URL(a.href, location.origin).searchParams.get('play');
+      if (!id) return;
+      e.preventDefault();
+      window.top.postMessage({ sasa: true, type: 'play', id: id }, location.origin);
+    });
+  }
+
   // --- theme (light / dark) --------------------------------------------------------------------
   // Set BEFORE the style injection below (this is a synchronous head script) so there's no flash.
   // Default = dark (no attribute). realm.js overrides only ACCENT tokens for sandbox, and the light

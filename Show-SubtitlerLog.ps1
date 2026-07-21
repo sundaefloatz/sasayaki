@@ -1482,6 +1482,10 @@ function Invoke-LibTitleOverride($o) {
     @{ ok = $true; id = $id; title = $title } | ConvertTo-Json -Compress
 }
 
+# extensions that carry a real video track (vs. audio-only) -- mirrors the VID/AUD split other
+# pipeline scripts (library_stats.py, analyze_audio.py) already use for the same classification.
+$script:VidExt = '.mp4', '.mkv', '.webm', '.mov', '.avi', '.m4v', '.ts'
+
 function Get-Library {
     # assemble the cover-art library from the audio index + title translations.
     # ~30s cache: rebuilding 300+ records from audio_index.json each request was 119ms/load.
@@ -1524,6 +1528,7 @@ function Get-Library {
             $row = [ordered]@{ id = $p.Name; creator = $v.creator; base = $base; ja = $base
                     title = $(if ($en) { $en } else { $base }); tags = $wtags
                     rms = $v.rmsDb; width = $v.stereoWidthDb; silence = $v.silenceRatio; dur = $v.durationSec
+                    kind = $(if ($script:VidExt -contains [IO.Path]::GetExtension($p.Name).ToLower()) { 'video' } else { 'audio' })
                     thumb = '/thumb?id=' + [uri]::EscapeDataString($p.Name) }
             if ($prodMap.Count -and $p.Name -like 'DLsite\Audio\*') {
                 $segs = $p.Name -split '\\'
@@ -1602,7 +1607,9 @@ function Get-Library {
                 $stem = (Split-Path $rel -Parent) + '|' + $b
                 if (-not $seenStem.Add($stem)) { continue }   # already have this recording in another container
                 $works.Add([ordered]@{ id = $rel; creator = $cd.Name; base = $b; ja = $b; title = $b
-                        tags = @(); pending = $true; thumb = '/thumb?id=' + [uri]::EscapeDataString($rel) })
+                        tags = @(); pending = $true
+                        kind = $(if ($script:VidExt -contains $f.Extension.ToLower()) { 'video' } else { 'audio' })
+                        thumb = '/thumb?id=' + [uri]::EscapeDataString($rel) })
             }
         }
     } catch {}
@@ -2245,7 +2252,9 @@ function Get-WorkThumb {
 function Get-AudioContentType {
     param([string]$Ext)
     switch ($Ext.ToLower()) {
-        '.mp3' { 'audio/mpeg' }; '.m4a' { 'audio/mp4' }; '.mp4' { 'audio/mp4' }; '.m4v' { 'audio/mp4' }
+        '.mp3' { 'audio/mpeg' }; '.m4a' { 'audio/mp4' }
+        '.mp4' { 'video/mp4' }; '.m4v' { 'video/mp4' }
+        '.mkv' { 'video/x-matroska' }; '.webm' { 'video/webm' }
         '.flac' { 'audio/flac' }; '.wav' { 'audio/wav' }; '.opus' { 'audio/ogg' }; '.ogg' { 'audio/ogg' }
         '.aac' { 'audio/aac' }; default { 'application/octet-stream' }
     }
@@ -3195,6 +3204,7 @@ function Start-Server {
                 }
                 elseif ($path -eq '/library') { $body = Get-CachedHtml 'library.html'; $res.ContentType = 'text/html; charset=utf-8' }
                 elseif ($path -eq '/home') { $body = Get-CachedHtml 'home.html'; $res.ContentType = 'text/html; charset=utf-8' }
+                elseif ($path -eq '/app') { $body = Get-CachedHtml 'app.html'; $res.ContentType = 'text/html; charset=utf-8' }
                 elseif ($path -eq '/wiki.json') { $body = $(if ($ctx.Request.QueryString['realm'] -eq 'sandbox') { Get-SandboxWikiIndex } else { Get-WikiIndex }); $res.ContentType = 'application/json; charset=utf-8' }
                 elseif ($path -eq '/wikinote') { $body = Get-WikiNote $ctx.Request.QueryString['id']; if ($null -eq $body) { $res.StatusCode = 404; $body = '# not found' } else { $keepCache = $true }; $res.ContentType = 'text/markdown; charset=utf-8' }
                 elseif ($path -eq '/wikitr') { $tr = Get-WikiTr $ctx.Request.QueryString['id'] $ctx.Request.QueryString['lang']; $res.StatusCode = [int]$tr.status; if ($tr.status -eq 202) { $res.ContentType = 'application/json; charset=utf-8' } else { $res.ContentType = 'text/markdown; charset=utf-8'; if ($tr.status -eq 200) { $keepCache = $true } }; $body = $tr.body }
