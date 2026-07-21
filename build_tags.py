@@ -90,7 +90,16 @@ def note_tags(creator, base):
 
 
 def main():
-    idx = json.load(open(AIDX, encoding="utf-8"))
+    # audio_index.json is analyze_audio.py's output. On a fresh CPU-only install it may not exist
+    # yet (the app is already browsable via the server's filesystem pending-scan before any builder
+    # runs) -- treat that as an empty library and still write a valid empty tags.json, rather than
+    # crashing with FileNotFoundError.
+    idx = {}
+    if os.path.exists(AIDX):
+        try:
+            idx = json.load(open(AIDX, encoding="utf-8"))
+        except (ValueError, OSError):
+            idx = {}
     dl = {}
     if os.path.exists(PROD):
         for p in json.load(open(PROD, encoding="utf-8")).get("products", []):

@@ -58,9 +58,12 @@ subfolder named `Sasayaki`, then `docker compose up -d --build`.
 ## stack
 
 A single PowerShell 7 `HttpListener` server (`Show-SubtitlerLog.ps1 -Serve`) + static HTML/JS pages
-+ four **stdlib-only** Python scripts (no pip installs, no ML libraries) for subtitle serving and
-tag/ledger bookkeeping. `ffmpeg`/`ffprobe` for thumbnails and audio probing. That's the whole
-runtime dependency list.
++ six **stdlib-only** Python scripts (no pip installs, no ML libraries): `subs_for.py` (subtitle
+serving), `paths.py` (path resolution), and four index builders — `analyze_audio.py` (acoustic
+index), `build_tags.py` (tags), `process_ledger.py` (processing status), `source_scan.py` (source
+badges). `ffmpeg`/`ffprobe` for thumbnails, audio probing, and the acoustic index. That's the whole
+runtime dependency list — no GPU, no models, no network. A stdlib-only `smoke_test.py` verifies a
+running instance against the install checklist.
 
 ## license
 

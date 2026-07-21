@@ -187,7 +187,16 @@ def stage_info_for_leaf(leaf_dir: Path):
 
 
 def build_ledger():
-    audio_index = load_json_sanitized(AUDIO_INDEX_PATH)
+    # audio_index.json is analyze_audio.py's output. On a fresh CPU-only install it may not exist
+    # yet -- treat a missing/unreadable index as an empty library and emit a valid empty ledger
+    # rather than crashing with FileNotFoundError.
+    if AUDIO_INDEX_PATH.exists():
+        try:
+            audio_index = load_json_sanitized(AUDIO_INDEX_PATH)
+        except (ValueError, OSError):
+            audio_index = {}
+    else:
+        audio_index = {}
     derived_index, leaf_dir_count = build_derived_index(DERIVED_ROOT)
 
     works = {}

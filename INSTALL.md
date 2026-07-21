@@ -69,10 +69,38 @@ docker compose logs -f       # watch startup; Ctrl-C to stop watching (container
 
 `http://localhost:8080/library`
 
+You should see your library immediately — every audio file shows up as a playable card, even
+before you build any index (the server does a live filesystem scan). Titles are filenames and
+cards have no tags yet; that's what the optional index build below fills in.
+
+## 5. (Optional) First run: build the index
+
+The core ships four **CPU-only** index builders. Running them once turns the raw filesystem
+listing into a proper library — acoustic tags, a tag filter, a processing ledger, and source
+badges. They read your library and write only into `_data/` and `_wiki/` (never your audio).
+**Order matters — `analyze_audio.py` first**, because the others read its output.
+
+```bash
+# run inside the container (the app must resolve its own paths at /media)
+docker compose exec sasayaki python /media/Sasayaki/analyze_audio.py   --root /media   # -> _wiki/audio_index.json  (acoustic stats + tags; ffmpeg, can take a while on a big library)
+docker compose exec sasayaki python /media/Sasayaki/build_tags.py                       # -> _wiki/tags.json          (clickable tag chips / filtering)
+docker compose exec sasayaki python /media/Sasayaki/process_ledger.py                   # -> _data/process_ledger.json (per-work processing status)
+docker compose exec sasayaki python /media/Sasayaki/source_scan.py                      # -> _data/source_platform.json (DLsite/YouTube/etc. source filters)
+```
+
+Refresh `/library` afterward — cards now carry real tags, the tag filter and source chips
+populate, and titles pick up any DLsite metadata you have. Re-run any of them whenever you add
+new works; `analyze_audio.py` is resumable (it skips unchanged files).
+
+Everything else (transcription, translation, vibe/moment search, trigger timelines, the creator
+wiki, AI chat) needs the separate GPU worker package and stays empty here — see the README's
+feature table.
+
 ## What to expect
 
-- Your creator folders show up as-is; audio plays directly.
-- Tags, DLsite metadata, and library-management **hide/unhide** work immediately.
+- Your creator folders show up as-is; audio plays directly — no index build required.
+- Library-management **hide/unhide** works immediately. Tags, the tag filter, and source badges
+  populate once you run the optional index build in step 5 above.
 - **delete/restore** (which physically move an audio file into a trash folder) need write
   access to your library, which is deliberately off by default for safety. To enable it,
   change the library line in `docker-compose.yml` from `:ro` to `:rw`.
