@@ -23,7 +23,6 @@ Classification, in confidence order (all read-only signals):
 import os, re, json, glob, argparse, tempfile, shutil, time
 
 ROOT = os.environ.get("SASAYAKI_ROOT", "/media")
-OUT = os.path.join(ROOT, "_data", "source_platform.json")
 SKIP = {"Sasayaki", "_wiki", "_data", "_secrets", "_remote", "covers", "models", "_font_backup",
         "_backups", "_jobs", "_test"}
 AUD = (".m4a", ".mp3", ".wav", ".flac", ".opus", ".ogg", ".mp4", ".mkv", ".m4v", ".webm")
@@ -125,10 +124,6 @@ def classify(fname, dp, creator_dir, dlsite_rjs, yt_names, openrec_ids, sources_
     if m and m.group(0) in dlsite_rjs:
         return "dlsite", "high", f"RJ code {m.group(0)} in _products.json"
 
-    m = _TC_ID.search(fname)
-    if m:
-        return "twitcasting", "high", f"stream-id suffix _{m.group(1)}"
-
     if openrec_ids and any(oid in fname for oid in openrec_ids):
         return "openrec", "high", "id in _openrec_manifest.json"
 
@@ -142,6 +137,13 @@ def classify(fname, dp, creator_dir, dlsite_rjs, yt_names, openrec_ids, sources_
     if "fanbox" in fname.lower():
         return "fanbox", "medium", "'FANBOX' in filename"
 
+    # twitcasting is a bare numeric-suffix heuristic, so it must rank BELOW the higher-confidence
+    # signals above -- otherwise a FANBOX/YouTube file that happens to carry a numeric id suffix
+    # (e.g. a fanbox post id "..._831651088.m4a") gets misfiled as twitcasting.
+    m = _TC_ID.search(fname)
+    if m:
+        return "twitcasting", "high", f"stream-id suffix _{m.group(1)}"
+
     if len(sources_platforms) == 1:
         only = next(iter(sources_platforms))
         return only, "medium", f"single platform in _sources.txt ({only})"
@@ -151,6 +153,8 @@ def classify(fname, dp, creator_dir, dlsite_rjs, yt_names, openrec_ids, sources_
 
 def scan(root=None, log=print):
     root = root or ROOT
+    out = os.path.join(root, "_data", "source_platform.json")   # derived from `root`, NOT module OUT --
+    # otherwise selftest(tempdir) and any explicit --root both write into the DEFAULT library's _data/.
     yt_ingest_root = os.path.join(root, "_data", "yt_ingest")
     dlsite_rjs = _dlsite_rjs(root)
     yt_names = _yt_ingest_basenames(yt_ingest_root)
@@ -180,9 +184,10 @@ def scan(root=None, log=print):
     payload = {"updated": __import__("time").strftime("%Y-%m-%d %H:%M"),
                "counts": dict(sorted(counts.items(), key=lambda kv: -kv[1])),
                "by_creator": by_creator}
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    json.dump(payload, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-    log(f"=== source inventory -> {OUT} ===")
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    with open(out, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=1)
+    log(f"=== source inventory -> {out} ===")
     for platform, n in payload["counts"].items():
         log(f"  {platform:12} {n}")
     log(f"  creators scanned: {len(by_creator)}")

@@ -69,15 +69,23 @@ def run(base, expect_works):
     checks.append(c)
     reachable = c.status == "PASS"
 
+    # Fetch /library.json ONCE, up front, and reuse it for checks 2-5. (Re-fetching per check risked a
+    # different snapshot mid-run if a rebuild completed between calls.)
+    lib = None
+    rows = []
+    if reachable:
+        _, lbody, _ = _get(base, "/library.json")
+        lib = _json(lbody)
+        rows = lib if isinstance(lib, list) else (lib.get("works", []) if isinstance(lib, dict) else [])
+    sample = rows[0].get("id") if rows else None
+
     # 2. Serves -- /home 200 and /library.json returns works.
     c = Check("serves", "Serves pages & library data")
     if not reachable:
         c.skip("server unreachable")
     else:
         hs, _, _ = _get(base, "/home")
-        ls, lbody, _ = _get(base, "/library.json")
-        lib = _json(lbody)
-        n = len(lib) if isinstance(lib, list) else (len(lib.get("works", [])) if isinstance(lib, dict) else 0)
+        n = len(rows)
         if hs != 200:
             c.fail(f"/home -> {hs}")
         elif not isinstance(lib, list) and not isinstance(lib, dict):
@@ -87,14 +95,6 @@ def run(base, expect_works):
         else:
             c.ok(f"/home 200, /library.json {n} works")
     checks.append(c)
-
-    # Grab a sample work id for later criteria.
-    sample = None
-    _, lbody, _ = _get(base, "/library.json")
-    lib = _json(lbody)
-    rows = lib if isinstance(lib, list) else (lib.get("works", []) if isinstance(lib, dict) else [])
-    if rows:
-        sample = rows[0].get("id")
 
     # 3. Fresh-DB browse -- works list even with no index (pending FS scan). A pending card is the
     #    proof: it means the row came from the filesystem, not audio_index.json.

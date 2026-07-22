@@ -102,9 +102,13 @@ def main():
             idx = {}
     dl = {}
     if os.path.exists(PROD):
-        for p in json.load(open(PROD, encoding="utf-8")).get("products", []):
-            if p.get("title") and p.get("genres"):
-                dl[p["title"]] = [norm(g) for g in p["genres"] if g]
+        try:                                      # mirror the AIDX guard above: a truncated/corrupt
+            with open(PROD, encoding="utf-8") as f:   # _products.json must degrade to {}, not abort the build
+                for p in json.load(f).get("products", []):
+                    if p.get("title") and p.get("genres"):
+                        dl[p["title"]] = [norm(g) for g in p["genres"] if g]
+        except (ValueError, OSError):
+            dl = {}
 
     cmap = load_canon_map()
     raw_works, works, src = {}, {}, {"acoustic": 0, "note": 0, "dlsite": 0}

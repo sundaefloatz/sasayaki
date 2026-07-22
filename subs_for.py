@@ -6,7 +6,7 @@ derived-layer migration -- subs now live in _data/derived/, not as library sibli
 works, preference is claude.* (hand-authored Claude passes) > rseg.* (machine resegmentation) >
 plain ja/en. DLsite official subs are READ ONLY / ground truth here (no claude/rseg override).
 
-  python subs_for.py --id "Sata Nakia 沙汰ナキア\2024-07-14 ....m4a" --json
+  python subs_for.py --id "Some Creator\2024-07-14 example work.m4a" --json
 """
 import os, re, sys, json, argparse
 

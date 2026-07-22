@@ -14,11 +14,9 @@ size+mtime are unchanged, so re-runs are cheap.
 Analyzes a representative ~90s sample from the middle of each file (full-file scan of a
 600-work archive would take hours; the sample is plenty for loudness/width/silence).
 """
-import os, re, json, glob, subprocess, argparse, time
+import os, re, json, glob, subprocess, argparse, time, math
 
-SUB = os.path.dirname(os.path.abspath(__file__))
 ROOT_DEFAULT = os.environ.get("SASAYAKI_ROOT", "/media")
-OUT = os.path.join(os.path.dirname(SUB), "_wiki", "audio_index.json")
 AUD = (".m4a", ".mp3", ".wav", ".flac", ".opus", ".ogg", ".aac", ".wma")
 VID = (".mp4", ".mkv", ".webm", ".mov", ".m4v")
 SAMPLE = 90.0
@@ -28,11 +26,18 @@ _DR = re.compile(r"Dynamic range:\s*(\d+\.?\d*)")
 _SILDUR = re.compile(r"silence_duration:\s*([\d.]+)")
 
 
+def _index_path(root):
+    """audio_index.json lives under the LIBRARY root's _wiki/, derived from --root (NOT the script's
+    own location) so an explicit --root writes where it actually scanned."""
+    return os.path.join(root, "_wiki", "audio_index.json")
+
+
 def _f(v):
     try:
-        return float(v)
+        f = float(v)
     except Exception:
         return None
+    return f if math.isfinite(f) else None   # non-finite (inf/-inf/nan) -> None: never emit invalid JSON
 
 
 def ffprobe(path):
@@ -157,20 +162,24 @@ def fix_creators(root):
     component (the pre-2026-07-02 code stamped the immediate parent folder, which is the WORK
     folder in the per-work layout -- 217 entries carried bogus creators). Also drops entries
     whose file no longer exists on disk. Derived-artifact-only; no audio re-analysis."""
-    if not os.path.exists(OUT):
+    out = _index_path(root)
+    if not os.path.exists(out):
         print("no index to fix"); return
-    idx = json.load(open(OUT, encoding="utf-8"))
+    with open(out, encoding="utf-8") as f:
+        idx = json.load(f)
     fixed = dropped = 0
     for key in list(idx.keys()):
         if not os.path.exists(os.path.join(root, key)):
             del idx[key]; dropped += 1
             continue
-        right = key.split(os.sep)[0].split("/")[0]
+        right = re.split(r"[\\/]+", key)[0]
         if idx[key].get("creator") != right:
             idx[key]["creator"] = right; fixed += 1
-    json.dump(idx, open(OUT, "w", encoding="utf-8"), ensure_ascii=False)
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    with open(out, "w", encoding="utf-8") as f:
+        json.dump(idx, f, ensure_ascii=False)
     print(f"fix-creators: {fixed} creator fields corrected, {dropped} stale entries dropped, "
-          f"{len(idx)} entries remain -> {OUT}")
+          f"{len(idx)} entries remain -> {out}")
 
 
 def main():
@@ -184,13 +193,16 @@ def main():
     if a.fix_creators:
         fix_creators(a.root)
         return
+    out = _index_path(a.root)
+    os.makedirs(os.path.dirname(out), exist_ok=True)   # ensure _wiki/ exists BEFORE the first %20 checkpoint
     creators = [c.strip() for c in a.creators.split("|") if c.strip()]
     paths = targets(a.root, creators, a.path)
 
     idx = {}
-    if os.path.exists(OUT):
+    if os.path.exists(out):
         try:
-            idx = json.load(open(OUT, encoding="utf-8"))
+            with open(out, encoding="utf-8") as f:
+                idx = json.load(f)
         except Exception:
             idx = {}
 
@@ -213,16 +225,17 @@ def main():
             # per-work subfolders, where dirname(p) is the WORK folder (this bug stamped 217 index
             # entries with their work-folder name as "creator", which fed bogus creators to the
             # dashboard's Get-Library; fixed 2026-07-02, index repaired via --fix-creators).
-            feats["creator"] = os.path.relpath(p, a.root).split(os.sep)[0]
+            feats["creator"] = re.split(r"[\\/]+", os.path.relpath(p, a.root))[0]
             idx[key] = feats
             done += 1
             print(f"  {key[:60]:60} {','.join(feats['tags'])}", flush=True)
             if done % 20 == 0:                      # checkpoint so a long run is crash-safe
-                json.dump(idx, open(OUT, "w", encoding="utf-8"), ensure_ascii=False)
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    json.dump(idx, open(OUT, "w", encoding="utf-8"), ensure_ascii=False)
+                with open(out, "w", encoding="utf-8") as f:
+                    json.dump(idx, f, ensure_ascii=False)
+    with open(out, "w", encoding="utf-8") as f:
+        json.dump(idx, f, ensure_ascii=False)
     print(f"\nanalyzed {done}, skipped {skipped} (cached), {len(idx)} total in index "
-          f"({time.time()-t0:.0f}s) -> {OUT}", flush=True)
+          f"({time.time()-t0:.0f}s) -> {out}", flush=True)
 
 
 if __name__ == "__main__":

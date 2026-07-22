@@ -208,7 +208,15 @@ function esc(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>
 let ALL=[],QUEUE=[],curId=null;
 function loadLibrary(realm){
   const u='/library.json'+(realm==='sandbox'?'?realm=sandbox':'');
-  return fetch(u,{cache:'no-store'}).then(r=>r.json()).then(d=>{ALL=Array.isArray(d)?d:(d.works||[]);return ALL;});
+  // MERGE into ALL, never overwrite: a sandbox-retry fetch must not wipe out the core works (or the
+  // shell could never find/play a core work again after one sandbox play). Also tolerate an
+  // unreachable server without throwing.
+  return fetch(u,{cache:'no-store'}).then(r=>r.json()).then(d=>{
+    const rows=Array.isArray(d)?d:(d.works||[]);
+    const seen=new Set(ALL.map(w=>w.id));
+    rows.forEach(w=>{if(w&&w.id&&!seen.has(w.id))ALL.push(w);});
+    return ALL;
+  }).catch(()=>ALL);
 }
 loadLibrary();
 
@@ -372,15 +380,19 @@ window.addEventListener('message',e=>{
 
 /* ---- iframe stage + URL sync (?p=<path> seeds it; back/forward + in-app nav stay in sync) ---- */
 const stage=$('stage');
+// ?p= is attacker-influenceable (crafted /app?p=... link). Only ever load a SAME-ORIGIN absolute
+// path into the iframe -- reject 'javascript:...', 'https://evil', '//evil' etc., which would
+// otherwise frame arbitrary content or run script in this origin.
+function safePath(p){return (typeof p==='string'&&p[0]==='/'&&p[1]!=='/')?p:'/home';}
 function iframePath(){try{return stage.contentWindow.location.pathname+stage.contentWindow.location.search;}catch(err){return null;}}
 stage.addEventListener('load',()=>{
   const p=iframePath();
   if(p)history.replaceState(null,'','/app?p='+encodeURIComponent(p));
 });
 window.addEventListener('popstate',()=>{
-  const want=new URLSearchParams(location.search).get('p')||'/home';
+  const want=safePath(new URLSearchParams(location.search).get('p'));
   if(want!==iframePath())stage.src=want;
 });
-stage.src=new URLSearchParams(location.search).get('p')||'/home';
+stage.src=safePath(new URLSearchParams(location.search).get('p'));
 </script>
 </body></html>

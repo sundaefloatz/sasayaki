@@ -46,13 +46,14 @@ def _is_recognized(filename: str) -> bool:
 
 
 def load_json_sanitized(path: Path):
-    """Load a JSON file that may contain bare -Infinity/Infinity/NaN tokens."""
+    """Load a JSON file that may contain bare -Infinity/Infinity/NaN tokens (older indexes, before
+    analyze_audio.py coerced non-finite floats to null at the source)."""
     raw = path.read_text(encoding="utf-8")
-    # Replace bare (not already inside a longer identifier/number) Infinity/-Infinity/NaN
-    # tokens with null so json.loads doesn't choke on them.
-    raw = re.sub(r"(?<![0-9A-Za-z_.])-Infinity", "null", raw)
-    raw = re.sub(r"(?<![0-9A-Za-z_.])Infinity", "null", raw)
-    raw = re.sub(r"(?<![0-9A-Za-z_.])NaN", "null", raw)
+    # Replace only VALUE-POSITION Infinity/-Infinity/NaN (right after ':' , '[' or ',') with null.
+    # The old (?<![0-9A-Za-z_.]) lookbehind let a preceding quote through, so "Infinity ASMR" became
+    # "null ASMR" -- corrupting real creator names/titles. Anchoring on the JSON punctuation before a
+    # value can never match text inside a quoted string.
+    raw = re.sub(r"([:\[,]\s*)-?(?:Infinity|NaN)\b", r"\1null", raw)
     return json.loads(raw)
 
 

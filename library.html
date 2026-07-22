@@ -1562,6 +1562,10 @@ if(eqName!=='Standard'){$('fpeq').classList.add('on');                 // reflec
   const armEq=()=>{applyEq(eqName);au.removeEventListener('play',armEq);};   // build the graph on the first play gesture
   au.addEventListener('play',armEq);}
 document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;
+  // When embedded in the /app shell, playback is the shell's -- this page's own transport drives a
+  // dead hidden <audio>, and step() with an unset curId would post "play QUEUE[0]" to the shell,
+  // RESETTING it to the first library item. The shell has its own keyboard handler; defer to it.
+  if(window.SASA_EMBEDDED)return;
   if(e.code==='Escape'){if(ccOpen){toggleCC();}else if(fpOpen){closeFull();}return;}   // CC first, then overlay
   if(e.code==='Space'){e.preventDefault();$('pp').click();}
   else if(e.code==='ArrowRight')step(1);else if(e.code==='ArrowLeft')step(-1);

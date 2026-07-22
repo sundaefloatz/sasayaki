@@ -1495,7 +1495,7 @@ function Get-Library {
     $aip = Join-Path $wiki 'audio_index.json'; $ttp = Join-Path $wiki 'title_translations.json'
     $ai = $null; $tt = $null
     if (Test-Path -LiteralPath $aip) {
-        try { $ai = ((Get-Content -LiteralPath $aip -Raw) -replace '-?Infinity', 'null' -replace '\bNaN\b', 'null') | ConvertFrom-Json } catch {}
+        try { $ai = ((Get-Content -LiteralPath $aip -Raw) -replace '([:\[,]\s*)-?(?:Infinity|NaN)\b', '${1}null') | ConvertFrom-Json } catch {}
     }
     if (Test-Path -LiteralPath $ttp) { try { $tt = Get-Content -LiteralPath $ttp -Raw | ConvertFrom-Json } catch {} }
     $tg = $null; $tgp = Join-Path $wiki 'tags.json'   # unified #tag layer (build_tags.py)
@@ -1817,7 +1817,7 @@ function Get-WikiIndex {
     $aip = Join-Path $wiki 'audio_index.json'
     if (Test-Path -LiteralPath $aip) {
         try {
-            $ai = ((Get-Content -LiteralPath $aip -Raw) -replace '-?Infinity', 'null' -replace '\bNaN\b', 'null') | ConvertFrom-Json
+            $ai = ((Get-Content -LiteralPath $aip -Raw) -replace '([:\[,]\s*)-?(?:Infinity|NaN)\b', '${1}null') | ConvertFrom-Json
             foreach ($p in $ai.PSObject.Properties) {
                 $b = [IO.Path]::GetFileNameWithoutExtension(($p.Name -split '[\\/]')[-1])
                 if (-not $base2id.ContainsKey($b)) { $base2id[$b] = @{ id = $p.Name; creator = $p.Value.creator } }
