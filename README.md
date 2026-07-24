@@ -39,8 +39,10 @@ The full Sasayaki project also includes a **GPU comprehension pipeline** — ASR
 (anime-whisper, a Whisper fine-tune that doesn't hallucinate on breathy non-verbal audio), local-LLM
 JA→EN translation with onomatopoeia rendered as stage directions, a self-grading reviewer, and a
 research agent that builds a local wiki per creator. That pipeline is a **separate, optional worker
-package** — it writes its output into this same library's `_data/derived/` folder, so the core here
-just picks it up. Nothing about running the core requires the worker to exist.
+package, not published yet** — it writes its output into this same library's `_data/derived/`
+folder, so the core here just picks it up. Nothing about running the core requires the worker to
+exist. See [GPU_WORKER.md](GPU_WORKER.md) for a blueprint of what it does and how it's meant to
+attach, if that's useful.
 
 > Why a separate ASR fine-tune matters: vanilla Whisper hears breathy, non-verbal ASMR — kisses,
 > ear-licking, soft breaths — finds no dictionary words, and hallucinates *"thanks for watching"*
