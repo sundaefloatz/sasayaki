@@ -12,6 +12,7 @@ pipeline that grows into it**
 ![CPU only](https://img.shields.io/badge/GPU-not%20required-444)
 ![100%25 local](https://img.shields.io/badge/cloud-none-e75a7c)
 ![MIT](https://img.shields.io/badge/license-MIT-97ca00)
+![vibecoded](https://img.shields.io/badge/vibecoded-yes-8a5cf6)
 
 <img src="docs/library-grid.png" alt="Sasayaki library — cover grid with tags and trigger chips" width="900">
 
@@ -104,6 +105,14 @@ running instance against the install checklist.
 ## license
 
 See [LICENSE](LICENSE).
+
+## how this was built
+
+Vibecoded, unapologetically. I'm one person with a large ASMR library and an opinion about how it
+should be browsed; I described what I wanted, iterated in conversation, and read/tested everything
+that landed. No formal spec, no team, no roadmap beyond "what's annoying me this week." If that's
+not your thing, the code is all here to judge on its own terms — and if you find something rough,
+that's expected at this stage (see the pinned "known gaps" issue). PRs welcome.
 
 ---
 
