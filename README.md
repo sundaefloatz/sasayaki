@@ -60,6 +60,7 @@ attach, if that's useful.
 | DLsite metadata display | ✅ | |
 | Sandbox / core realm split, hide/unhide | ✅ | |
 | Library management — re-run pipeline per work, title overrides, folder view | ✅ | |
+| Self-maintenance — one-command index rebuild + integrity check, schedulable | ✅ | |
 | Delete/restore (moves the audio file) | ⚙️ *(opt-in — needs a `:rw` library mount, see INSTALL.md)* | |
 | Subtitle playback (bilingual drawer) | ✅ *(if `.ja.srt`/`.en.srt` already exist)* | |
 | Trigger/timeline markers | ✅ *(if `triggers.json` already exists)* | |
@@ -94,15 +95,42 @@ navigate anywhere (library, wiki, discover, settings) and playback never stops:
 See [INSTALL.md](INSTALL.md). Short version: this folder needs to sit inside your library as a
 subfolder named `Sasayaki`, then `docker compose up -d --build`.
 
+## keeping it healthy
+
+One command rebuilds the derived state and verifies the library is intact — all local, no GPU, no
+network, no AI:
+
+```
+pwsh ./maintain-library.ps1            # rebuild + verify (report only)
+pwsh ./maintain-library.ps1 -Fix       # also repair the safe subset
+pwsh ./maintain-library.ps1 -Schedule  # install a nightly job (Windows Task Scheduler)
+```
+
+It runs the four index builders in dependency order, then `library_doctor.py`, whose exit code
+becomes the script's (`0` = clean). A no-change run takes seconds, because `analyze_audio.py`
+skips files whose size+mtime are unchanged.
+
+`library_doctor.py` can also be run on its own, and checks for the drift classes that actually
+bite a long-lived library: index entries whose file is gone, duplicate keys from mixing Windows
+and Linux path separators, non-finite values that make the index invalid JSON, media on disk not
+yet indexed, zero-byte files, orphaned derived dirs, and stale thumb-cache entries. `--fix` only
+ever touches derived/cache data — **it never modifies or deletes your media.**
+
+```
+python3 library_doctor.py --root /media          # report, exit 1 if issues
+python3 library_doctor.py --root /media --fix    # repair the safe subset
+```
+
 ## stack
 
 A single PowerShell 7 `HttpListener` server (`Show-SubtitlerLog.ps1 -Serve`) + static HTML/JS pages
-+ six **stdlib-only** Python scripts (no pip installs, no ML libraries): `subs_for.py` (subtitle
-serving), `paths.py` (path resolution), and four index builders — `analyze_audio.py` (acoustic
++ seven **stdlib-only** Python scripts (no pip installs, no ML libraries): `subs_for.py` (subtitle
+serving), `paths.py` (path resolution), four index builders — `analyze_audio.py` (acoustic
 index), `build_tags.py` (tags), `process_ledger.py` (processing status), `source_scan.py` (source
-badges). `ffmpeg`/`ffprobe` for thumbnails, audio probing, and the acoustic index. That's the whole
-runtime dependency list — no GPU, no models, no network. A stdlib-only `smoke_test.py` verifies a
-running instance against the install checklist.
+badges) — and `library_doctor.py` (integrity checking). `ffmpeg`/`ffprobe` for thumbnails, audio
+probing, and the acoustic index. That's the whole runtime dependency list — no GPU, no models, no
+network. `maintain-library.ps1` chains the builders + doctor into one schedulable command, and a
+stdlib-only `smoke_test.py` verifies a running instance against the install checklist.
 
 ## license
 

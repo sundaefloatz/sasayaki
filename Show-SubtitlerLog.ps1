@@ -1486,6 +1486,22 @@ function Invoke-LibTitleOverride($o) {
 # pipeline scripts (library_stats.py, analyze_audio.py) already use for the same classification.
 $script:VidExt = '.mp4', '.mkv', '.webm', '.mov', '.avi', '.m4v', '.ts'
 
+function Split-WorkId {
+    # Split an index key into path segments, separator-agnostic. audio_index.json keys carry the
+    # separator of whichever OS built them: '\' from a Windows run, '/' from Linux (the Docker
+    # core, or the NAS). Grouping/dedup used to hard-match '\' and silently did NOTHING on a
+    # Linux-built index -- DLsite albums never collapsed, inflating the library by ~270 rows.
+    param([string]$Id)
+    return ($Id -split '[\\/]+')
+}
+
+function Test-DLsiteAudioId {
+    # True for a DLsite audio-product key regardless of path separator.
+    param([string]$Id)
+    $segs = Split-WorkId $Id
+    return ($segs.Count -ge 2 -and $segs[0] -eq 'DLsite' -and $segs[1] -eq 'Audio')
+}
+
 function Get-Library {
     # assemble the cover-art library from the audio index + title translations.
     # ~30s cache: rebuilding 300+ records from audio_index.json each request was 119ms/load.
@@ -1530,8 +1546,8 @@ function Get-Library {
                     rms = $v.rmsDb; width = $v.stereoWidthDb; silence = $v.silenceRatio; dur = $v.durationSec
                     kind = $(if ($script:VidExt -contains [IO.Path]::GetExtension($p.Name).ToLower()) { 'video' } else { 'audio' })
                     thumb = '/thumb?id=' + [uri]::EscapeDataString($p.Name) }
-            if ($prodMap.Count -and $p.Name -like 'DLsite\Audio\*') {
-                $segs = $p.Name -split '\\'
+            if ($prodMap.Count -and (Test-DLsiteAudioId $p.Name)) {
+                $segs = Split-WorkId $p.Name
                 if ($segs.Count -ge 4) {
                     $m = $prodMap["$($segs[2])|$($segs[3])"]; if (-not $m) { $m = $prodMap["|$($segs[3])"] }
                     if ($m) {
@@ -1554,10 +1570,12 @@ function Get-Library {
         $groups = [ordered]@{}
         $keep = [System.Collections.Generic.List[object]]::new()
         foreach ($w in $works) {
-            if ($w.id -like 'DLsite\Audio\*') {
+            if (Test-DLsiteAudioId $w.id) {
                 # DLsite ships the same tracks as mp3+wav under format-named folders (【mp3】X/【wav】X, MP3\/wav\...);
                 # normalize the dir (strip format tokens + digits/punct) so those collapse.
-                $dir = Split-Path $w.id -Parent
+                # Split-WorkId (not Split-Path) so a '/'-keyed index groups identically to a '\'-keyed one.
+                $segs = Split-WorkId $w.id
+                $dir = ($segs[0..($segs.Count - 2)] -join '\')
                 $norm = ($dir.ToLowerInvariant() -replace 'mp3|wav|flac|m4a', '' -replace '[0-9【】\[\]\(\)_\-\\\/\. ]', '')
                 $gk = "dl|$norm|$($w.base)"
             }
@@ -1619,8 +1637,8 @@ function Get-Library {
     # group of >=2 and expands it on click. Groups of 1 render as normal single cards.
     foreach ($w in $works) {
         $wid = "$($w.id)"
-        if ($wid -like 'DLsite\Audio\*') {
-            $segs = $wid -split '\\'
+        if (Test-DLsiteAudioId $wid) {
+            $segs = Split-WorkId $wid
             if ($segs.Count -ge 4) { $w.grp = ($segs[0..3] -join '\'); $w.grpkind = 'album'; $w.grptitle = "$($segs[3])" }
         }
         elseif ($w.dur -and -not $w.pending) {
@@ -1671,8 +1689,8 @@ function Get-Library {
         $d = $null
         $m = [regex]::Match([string]$w.base, '^\s*(20\d{2})[-_.]?(\d{2})[-_.]?(\d{2})')
         if ($m.Success) { $d = "$($m.Groups[1].Value)-$($m.Groups[2].Value)-$($m.Groups[3].Value)" }
-        elseif (("$($w.id)" -like 'DLsite\Audio\*') -and $dlDate.Count) {
-            foreach ($seg in ("$($w.id)" -split '\\')) { if ($dlDate.ContainsKey($seg)) { $d = $dlDate[$seg]; break } }
+        elseif ((Test-DLsiteAudioId "$($w.id)") -and $dlDate.Count) {
+            foreach ($seg in (Split-WorkId "$($w.id)")) { if ($dlDate.ContainsKey($seg)) { $d = $dlDate[$seg]; break } }
         }
         $w.date = $d
     }
@@ -1753,6 +1771,7 @@ function Get-SandboxLibrary {
                 $dt = $(if ($dm.Success) { "$($dm.Groups[1].Value)-$($dm.Groups[2].Value)-$($dm.Groups[3].Value)" } else { $null })
                 $works.Add([ordered]@{ id = $rel; creator = $ch.Name; base = $b; ja = $b
                         title = $b; tags = @($(if ($sbxTags.ContainsKey($rel)) { $sbxTags[$rel] } else { @() })); sandbox = $true; date = $dt; platform = $rt.plat
+                        kind = $(if ($script:VidExt -contains [IO.Path]::GetExtension($picks[$b]).ToLower()) { 'video' } else { 'audio' })
                         hasJa = $srt.Contains($b); hasEn = $ensrt.Contains($b)
                         thumb = '/thumb?id=' + [uri]::EscapeDataString($rel) })
             }
