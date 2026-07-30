@@ -171,10 +171,12 @@ def main():
             for k in dupes:
                 idx.pop(k, None)
             fixed["separator_dupes_dropped"] = len(dupes); changed = True
-        if renames:
-            for k in renames:
-                idx[k.replace(foreign, sep)] = idx.pop(k)
-            fixed["foreign_keys_renamed"] = len(renames); changed = True
+        # NOTE: foreign-separator keys are deliberately NOT rewritten. The thumb cache is keyed
+        # by SHA1(work_id), so renaming a key silently invalidates that work's cached thumbnail
+        # and forces an ffmpeg regeneration -- measured live: "tidying" 1611 keys on the NAS took
+        # orphaned thumbs from 97 to 155. Since Resolve-AudioPath and subs_for.py both normalize
+        # '\' and '/' already (verified: backslash ids serve /audio at HTTP 206 on Linux), the
+        # rewrite buys nothing and costs the cache. Detected and reported as advisory only.
         if nonfinite:
             fixed["nonfinite_nulled"] = nonfinite; changed = True   # nulled at load time
         if changed:
@@ -199,10 +201,17 @@ def main():
     LABELS = [
         ("stale_index",            "index entries whose file is GONE",              True,  ACTIONABLE),
         ("mixed_separator_dupes",  "duplicate keys (mixed path separators)",        True,  ACTIONABLE),
-        ("foreign_separator_keys", "keys using the foreign path separator",         True,  ACTIONABLE),
         ("nonfinite_values",       "non-finite values in index (Infinity/NaN)",     True,  ACTIONABLE),
         ("orphan_thumbs",          "orphaned thumb-cache entries",                  True,  ACTIONABLE),
         ("zero_byte_files",        "zero-byte/unreadable media files",              False, ACTIONABLE),
+        # ADVISORY, and deliberately so: this bucket only ever holds keys whose file WAS found
+        # (anything unresolvable lands in stale_index instead), and both Resolve-AudioPath and
+        # subs_for.py normalize '\' and '/' alike -- verified live on the Linux NAS, where 1336
+        # Windows-separator keys serve /audio at HTTP 206. It is also the STEADY STATE of a
+        # Windows-PC -> Linux-NAS mirror: the index is authored on Windows and copied verbatim,
+        # so calling it a fault would fail the NAS's nightly run forever for no reason. Marked
+        # NOT-fixable on purpose -- see the note at the fix site for why rewriting them is harmful.
+        ("foreign_separator_keys", "keys using the foreign path separator",         False, ADVISORY),
         ("unindexed_files",        "media on disk not yet indexed (run analyze)",   False, ADVISORY),
         ("orphan_derived_dirs",    "derived dirs with no matching work",            False, ADVISORY),
         ("orphan_sidecars",        "orphaned .source.json sidecars",                False, ADVISORY),
@@ -239,17 +248,37 @@ def main():
     if fixed:
         print(f"\nfixes applied: {fixed}")
     print(f"\nreport -> {rp}")
+
+    # The counts above are the state as FOUND. When --fix ran we must judge (and exit on) the
+    # state as LEFT, or a run that successfully repaired everything still reports failure -- the
+    # same cry-wolf trap this contract exists to avoid. Subtract what we actually repaired.
+    repaired = 0
+    if a.fix:
+        repaired = (fixed.get("stale_index_dropped", 0)
+                    + fixed.get("separator_dupes_dropped", 0)
+                    + fixed.get("nonfinite_nulled", 0)
+                    + fixed.get("orphan_thumbs_deleted", 0))
+    remaining = max(0, actionable - repaired)
+
     fixable_left = (not a.fix) and any(
         (findings[k] if isinstance(findings[k], int) else len(findings[k]))
         for k, _label, fx, _act in LABELS if fx)
-    if actionable == 0:
-        note = f" ({advisory} advisory note(s), nothing to repair)" if advisory else ""
-        print(f"library is intact{note}")
+    if remaining == 0:
+        bits = []
+        if repaired:
+            bits.append(f"{repaired} repaired")
+        if advisory:
+            bits.append(f"{advisory} advisory note(s), nothing to repair")
+        print("library is intact" + (f" ({'; '.join(bits)})" if bits else ""))
     else:
-        print(f"{actionable} actionable issue(s)" +
+        print(f"{remaining} actionable issue(s) remain" +
+              (f" after repairing {repaired}" if repaired else "") +
               (f", {advisory} advisory" if advisory else "") +
               ("  (run with --fix to repair the safe subset)" if fixable_left else ""))
-    sys.exit(0 if actionable == 0 else 1)
+    summary["actionableRemaining"] = remaining
+    summary["repaired"] = repaired
+    atomic_write_json(rp, summary)
+    sys.exit(0 if remaining == 0 else 1)
 
 
 if __name__ == "__main__":
