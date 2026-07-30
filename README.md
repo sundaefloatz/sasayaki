@@ -106,20 +106,51 @@ pwsh ./maintain-library.ps1 -Fix       # also repair the safe subset
 pwsh ./maintain-library.ps1 -Schedule  # install a nightly job (Windows Task Scheduler)
 ```
 
-It runs the four index builders in dependency order, then `library_doctor.py`, whose exit code
-becomes the script's (`0` = clean). A no-change run takes seconds, because `analyze_audio.py`
-skips files whose size+mtime are unchanged.
+It runs the four index builders in dependency order, then `library_doctor.py`. It exits non-zero
+if a builder crashed or the doctor found something **actionable**. A no-change run takes seconds,
+because `analyze_audio.py` skips files whose size+mtime are unchanged.
 
 `library_doctor.py` can also be run on its own, and checks for the drift classes that actually
-bite a long-lived library: index entries whose file is gone, duplicate keys from mixing Windows
-and Linux path separators, non-finite values that make the index invalid JSON, media on disk not
-yet indexed, zero-byte files, orphaned derived dirs, and stale thumb-cache entries. `--fix` only
-ever touches derived/cache data — **it never modifies or deletes your media.**
+bite a long-lived library. It sorts findings into two buckets, which matters because the exit code
+drives your scheduler's pass/fail — a checker that reports failure for cosmetic reasons trains you
+to ignore it:
+
+| | findings | exit |
+|---|---|:---:|
+| **actionable** | index entries whose file is gone · duplicate keys from mixed path separators · non-finite values that make the index invalid JSON · zero-byte/unreadable media | `1` |
+| **advisory** | media not yet indexed · orphaned derived dirs · orphaned `.source.json` sidecars · orphaned thumb-cache entries · index keys using the other OS's path separator | `0` |
+
+The advisory ones are steady state, not faults. Orphaned derived dirs are never auto-deleted
+because one may hold the only surviving subtitles for a work whose media moved. Thumb-cache
+orphans are regenerated on demand. And if you serve the same library from both Windows and Linux,
+the index legitimately carries one OS's separators on the other — the server normalizes both, so
+rewriting them would only invalidate the `SHA1(work_id)`-keyed thumb cache for nothing.
+
+`--fix` only ever touches derived/cache data — **it never modifies or deletes your media.** After
+repairing, the exit code reflects what's *left*, so a run that fixed everything reports success.
 
 ```
-python3 library_doctor.py --root /media          # report, exit 1 if issues
+python3 library_doctor.py --root /media          # report; exit 1 only on actionable findings
 python3 library_doctor.py --root /media --fix    # repair the safe subset
 ```
+
+### if you also run a second, always-on copy
+
+`nas-health-check.sh` is for the box that actually serves the dashboard when your authoring
+machine is asleep. It checks the dashboard responds, that `library.json` is populated and
+parseable, then runs the doctor — and alerts only on failure (via an existing `ntfy` topic in
+`_jobs/ntfy_topic.txt`, if one is present). Point cron at it:
+
+```
+40 2 * * * /path/to/Sasayaki/nas-health-check.sh >/dev/null 2>&1
+```
+
+It is **report-only by design**. If that copy receives `_wiki/audio_index.json` from elsewhere
+(Syncthing, rsync, a scheduled mirror), rebuilding the index there would diverge from the
+authoring machine, be overwritten on the next sync, and churn the thumb cache — so repair stays
+the authoring machine's job. Paths self-derive from the script's location;
+`SASA_CONTAINER` / `SASA_BASE` / `SASA_ROOT` override the container name, dashboard URL and
+in-container library root.
 
 ## stack
 
@@ -129,8 +160,10 @@ serving), `paths.py` (path resolution), four index builders — `analyze_audio.p
 index), `build_tags.py` (tags), `process_ledger.py` (processing status), `source_scan.py` (source
 badges) — and `library_doctor.py` (integrity checking). `ffmpeg`/`ffprobe` for thumbnails, audio
 probing, and the acoustic index. That's the whole runtime dependency list — no GPU, no models, no
-network. `maintain-library.ps1` chains the builders + doctor into one schedulable command, and a
-stdlib-only `smoke_test.py` verifies a running instance against the install checklist.
+network. `maintain-library.ps1` chains the builders + doctor into one schedulable command,
+`nas-health-check.sh` (POSIX `sh`, no bashisms) is the equivalent nightly check for a second
+always-on copy, and a stdlib-only `smoke_test.py` verifies a running instance against the install
+checklist.
 
 ## license
 
