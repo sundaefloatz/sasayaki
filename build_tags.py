@@ -13,6 +13,7 @@ note prose never leaves this script, and it reports COUNTS only (never prints th
   python build_tags.py
 """
 import os, re, json, time
+import paths
 
 ROOT = os.environ.get("SASAYAKI_ROOT", "/media")
 WIKI = os.path.join(ROOT, "_wiki")
@@ -161,6 +162,7 @@ def main():
                "dlsite": dlvocab,
                "updated": time.strftime("%Y-%m-%d %H:%M")},
               open(OUT, "w", encoding="utf-8"), ensure_ascii=False)
+    paths.make_host_writable(OUT)
 
     # COUNTS ONLY (do not print tag text -- some come from the private notes)
     raw_uniq = len({t for ts in raw_works.values() for t in ts})

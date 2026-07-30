@@ -15,6 +15,7 @@ Analyzes a representative ~90s sample from the middle of each file (full-file sc
 600-work archive would take hours; the sample is plenty for loudness/width/silence).
 """
 import os, re, json, glob, subprocess, argparse, time, math
+import paths as app_paths   # aliased: 'paths' is already a local var name (list of files to scan) below
 
 ROOT_DEFAULT = os.environ.get("SASAYAKI_ROOT", "/media")
 AUD = (".m4a", ".mp3", ".wav", ".flac", ".opus", ".ogg", ".aac", ".wma")
@@ -178,6 +179,7 @@ def fix_creators(root):
     os.makedirs(os.path.dirname(out), exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:
         json.dump(idx, f, ensure_ascii=False)
+    app_paths.make_host_writable(out)
     print(f"fix-creators: {fixed} creator fields corrected, {dropped} stale entries dropped, "
           f"{len(idx)} entries remain -> {out}")
 
@@ -232,8 +234,10 @@ def main():
             if done % 20 == 0:                      # checkpoint so a long run is crash-safe
                 with open(out, "w", encoding="utf-8") as f:
                     json.dump(idx, f, ensure_ascii=False)
+                app_paths.make_host_writable(out)
     with open(out, "w", encoding="utf-8") as f:
         json.dump(idx, f, ensure_ascii=False)
+    app_paths.make_host_writable(out)
     print(f"\nanalyzed {done}, skipped {skipped} (cached), {len(idx)} total in index "
           f"({time.time()-t0:.0f}s) -> {out}", flush=True)
 

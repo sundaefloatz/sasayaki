@@ -29,6 +29,7 @@ import os, re, sys, json, glob, hashlib, argparse, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import analyze_audio  # reuse targets() + extension sets so "what counts as media" never drifts
+import paths
 
 EXAMPLES = 8   # max examples printed per finding
 
@@ -52,6 +53,7 @@ def atomic_write_json(path, obj):
     with os.fdopen(fd, "w", encoding="utf-8") as f:
         json.dump(obj, f, ensure_ascii=False)
     os.replace(tmp, path)
+    paths.make_host_writable(path)
 
 
 def thumb_hash(work_id):

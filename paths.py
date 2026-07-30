@@ -52,6 +52,25 @@ def _is_skip_root_dir(name):
     return name in SKIP or name.startswith((".", "_"))
 
 
+def make_host_writable(path):
+    """Call right after writing a shared _data/_wiki state file (audio_index.json, tags.json,
+    doctor_report.json, ...). The Docker image runs as root with no USER directive, so a file it
+    writes lands root-owned 0600 -- a non-root host process (a sync tool, a backup job, the user's
+    own shell) can't even OPEN it to read/hash it, let alone overwrite it. That's silent: no error
+    surfaces anywhere but the sync tool's own log, and a receive-only replica just drifts forever
+    (confirmed 2026-07-30: a NAS's _wiki/audio_index.json sat stale for a week because Syncthing,
+    running as an unprivileged user, could not touch the container's root-owned copy). These files
+    are non-secret app state inside a LAN-only library mount, never credentials, so world-read/write
+    is a fair trade for "the mirror stays a mirror." No-op on Windows; best-effort everywhere (a
+    permission quirk here should never fail a pipeline run)."""
+    if os.name != "posix":
+        return
+    try:
+        os.chmod(path, 0o666)
+    except OSError:
+        pass
+
+
 def creator_of(audio):
     """Top-level folder under ROOT == the creator."""
     return os.path.relpath(audio, ROOT).split(os.sep, 1)[0]

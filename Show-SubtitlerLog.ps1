@@ -340,7 +340,7 @@ $ServeShell = @'
     --card:#141719;--inner:#0c0e10;--pk3:rgba(228,64,95,.14);--tile-h:104px;
     --accent-soft:#e4405f22;--accent-glow:#e4405f55;
     --hatch:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 1px,transparent 1px 8px)}
-  /* ops pages are dark-only by design (Adriel 2026-07-09): realm.js applies data-theme=light
+  /* ops pages are dark-only by design (2026-07-09): realm.js applies data-theme=light
      globally from sasa_theme, but this operator dashboard is Stakent-dark always. Re-pin the
      NEUTRALS under the light theme (!important beats realm.js's later-injected style); leave
      --cyan/accents untouched so the sandbox realm still recolors. */
@@ -656,7 +656,7 @@ $ServeShell = @'
     <div class="lanestat" id="lanestat"></div>
   </div>
   <div class="nowtl" id="nowtl" style="display:none"></div>
-  <!-- AI console removed from the dashboard 2026-07-10 (Adriel): it lives on its own page now -> /ai-chat.
+  <!-- AI console removed from the dashboard 2026-07-10: it lives on its own page now -> /ai-chat.
        The JS below keeps null-guards so the missing #aiprompt/#airun/#aijobs ids are harmless. -->
   <h2 id="clh">cluster &middot; jacked-in workers</h2>
   <div class="panel" id="clwrap"><div class="clempty">no workers jacked in &middot; plug a Sasayaki drive into a PC and run JACK-IN.bat</div></div>
@@ -1296,6 +1296,18 @@ function Get-NetThroughput {
 # always consistent even if a physical file-move hiccups. All mutations are USER-driven (clicks in
 # the library UI) — never the autonomous loop. Soft-delete MOVES files into _data/_trash (reversible);
 # purge is the only destructive op and is gated behind an explicit client confirm.
+function Set-HostWritable([string]$Path) {
+    # call right after writing a shared _data/_wiki state file. The container image has no USER
+    # directive, so it runs as root and a file it writes lands root-owned 0600 -- a non-root host
+    # process (a sync tool, a backup job, the user's own shell) can't even OPEN it to read/hash it,
+    # let alone overwrite it. That's silent: no error surfaces anywhere but the sync tool's own log,
+    # and a receive-only replica just drifts forever (confirmed 2026-07-30: a NAS's audio_index.json
+    # sat stale for a week because Syncthing, running unprivileged, could not touch the container's
+    # root-owned copy). These files are non-secret app state -- hide/delete records, title overrides,
+    # playlists -- inside a LAN-only library mount, never credentials, so world-read/write is a fair
+    # trade for "the mirror stays a mirror." No-op on Windows; best-effort everywhere.
+    if ($IsLinux) { try { & chmod 666 $Path 2>$null } catch {} }
+}
 function Get-LibStatePath { Join-Path (Split-Path $PSScriptRoot -Parent) '_data\library_state.json' }
 function Get-LibState {
     $p = Get-LibStatePath
@@ -1308,6 +1320,7 @@ function Save-LibState($h) {
     $p = Get-LibStatePath; $d = Split-Path $p -Parent
     if (-not (Test-Path -LiteralPath $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }
     ($h | ConvertTo-Json -Depth 6) | Set-Content -LiteralPath $p -Encoding UTF8
+    Set-HostWritable $p
     $script:LibAt = 0; $script:SbxLibAt = 0   # invalidate library caches so the change shows on the next load
 }
 function Get-TrashJson {
@@ -1492,6 +1505,7 @@ function Save-TitleOverrides($h) {
     $p = Get-TitleOverridesPath; $d = Split-Path $p -Parent
     if (-not (Test-Path -LiteralPath $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }
     ($h | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath $p -Encoding UTF8
+    Set-HostWritable $p
     # invalidate BOTH library caches so the new title shows on the next load -- the sandbox realm
     # applies overrides too now, and it has its own separate cache stamp
     $script:LibAt = 0
@@ -1548,6 +1562,7 @@ function Save-Playlists($h) {
     $out = [ordered]@{}
     foreach ($k in $h.Keys) { $out[$k] = @($h[$k]) }
     ($out | ConvertTo-Json -Depth 4 -Compress) | Set-Content -LiteralPath $p -Encoding UTF8
+    Set-HostWritable $p
 }
 function Invoke-PlaylistSave($o) {
     # POST { playlists: { name: [ids] } } -- a whole-map replace, which keeps the client simple
@@ -2585,7 +2600,7 @@ function Get-ActivityJson {
     } catch {}
     # --- live event STREAM: the specific work each stage is on right now + recent completions,
     # parsed from the freshest processing logs. This is what makes the feed show "what audio
-    # specifically" (Adriel) rather than just "transcribe dispatch running". ---
+    # specifically" rather than just "transcribe dispatch running". ---
     $stream = [System.Collections.Generic.List[object]]::new()
     try {
         $srcLogs = @('parallel_run.log', 'translate_run.log') | ForEach-Object { Join-Path $PSScriptRoot $_ }
