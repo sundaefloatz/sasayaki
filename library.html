@@ -1416,7 +1416,11 @@ function fpPpIcon(){$('fppp').innerHTML=au.paused?ICON_PLAY:ICON_PAUSE;}
 const tdrawer=$('trackdrawer');let tdOpen=false,tdKey=null;
 /* sibling key = the track file's PARENT FOLDER (a product can hold multiple variant subfolders —
    SEありmp3 / WAV / 効果音なし — each with its own Track01..N; siblings must be same-folder only). */
-function productKey(id){const s=String(id).split('\\');return s.length>=4&&s[0]==='DLsite'?s.slice(0,-1).join('\\'):null;}
+/* split on BOTH separators: ids are authored with the indexing machine's os.sep, so a Linux-built
+   index yields 'DLsite/Audio/...' and a backslash-only split silently returned null here -- which
+   made every DLsite product fall back to the generic queue list instead of its sibling tracks.
+   Same Windows-path-dependency class already fixed server-side in Get-Library's grouping. */
+function productKey(id){const s=String(id).split(/[\\/]/);return s.length>=4&&s[0]==='DLsite'?s.slice(0,-1).join('/'):null;}
 function trackNo(w){const m=String(w.base||'').match(/^\s*(?:track|tr)?[\s_.:：]*(\d{1,3})/i);return m?parseInt(m[1],10):null;}
 function trackSiblings(w){
   const key=productKey(w.id);
@@ -1432,7 +1436,7 @@ function buildTrackList(){
   const sibs=trackSiblings(w), list=sibs||QUEUE;
   const isProduct=!!sibs;
   tdKey=isProduct?productKey(w.id):'__queue__';
-  $('tdtitle').textContent=isProduct?(String(w.id).split('\\')[3]||'Tracks'):'Now playing queue';
+  $('tdtitle').textContent=isProduct?(String(w.id).split(/[\\/]/)[3]||'Tracks'):'Now playing queue';
   $('tdcount').textContent=list.length+(list.length===1?' track':' tracks');
   $('tdbody').innerHTML=list.map((x,i)=>{
     const no=isProduct?(trackNo(x)!=null?String(trackNo(x)).padStart(2,'0'):(i+1)):(i+1);
@@ -1785,8 +1789,34 @@ $('dedit').onclick=async()=>{
 function renderAddMenu(){const pls=plLoad();let h='';Object.keys(pls).forEach(n=>{h+=`<b data-pl="${esc(n)}">+ ${esc(n)} <small>(${pls[n].length})</small></b>`;});h+='<b data-new="1">+ New playlist…</b>';$('dmenu').innerHTML=h;
   $('dmenu').querySelectorAll('b').forEach(b=>b.onclick=()=>{if(b.getAttribute('data-new')){const n=prompt('Playlist name:');if(n)addTo(n.trim(),DETW);}else addTo(b.getAttribute('data-pl'),DETW);$('dmenu').classList.remove('show');});}
 /* ---- playlists ---- */
-function plLoad(){try{return JSON.parse(localStorage.getItem('sasa_pl')||'{}');}catch(e){return{};}}
-function plSave(p){try{localStorage.setItem('sasa_pl',JSON.stringify(p));}catch(e){}}
+/* Playlists live SERVER-SIDE (_data/playlists.json) so they follow you across devices and survive
+   a browser data clear -- they're hand-curated content, not a UI preference. PL is an in-memory
+   mirror kept hot for synchronous render paths; every mutation persists via POST /playlists/save.
+   localStorage is now only a one-time migration source + an offline fallback if the POST fails. */
+let PL={};
+function plLoad(){return PL;}
+function plSave(p){
+  PL=p||{};
+  try{localStorage.setItem('sasa_pl',JSON.stringify(PL));}catch(e){}      // local mirror/fallback
+  return fetch('/playlists/save',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({playlists:PL})}).then(r=>r.json()).catch(()=>{
+      toast('playlist saved locally only — server unreachable');});
+}
+(function plInit(){
+  fetch('/playlists.json',{cache:'no-store'}).then(r=>r.json()).then(srv=>{
+    srv=srv&&typeof srv==='object'?srv:{};
+    let local={};try{local=JSON.parse(localStorage.getItem('sasa_pl')||'{}');}catch(e){}
+    // one-time migration: names the server has never seen get pushed up, so playlists made before
+    // this change aren't silently orphaned. Server always wins on a name collision.
+    const missing=Object.keys(local).filter(n=>!(n in srv)&&Array.isArray(local[n])&&local[n].length);
+    PL=srv;
+    if(missing.length){
+      missing.forEach(n=>{PL[n]=local[n];});
+      plSave(PL).then(()=>toast('migrated '+missing.length+' local playlist(s) to the server'));
+    }
+    if(typeof plRender==='function'&&document.getElementById('pllist'))plRender();
+  }).catch(()=>{try{PL=JSON.parse(localStorage.getItem('sasa_pl')||'{}');}catch(e){PL={};}});
+})();
 function addTo(name,w){if(!name||!w)return;const p=plLoad();p[name]=p[name]||[];if(!p[name].includes(w.id))p[name].push(w.id);plSave(p);toast('Added to "'+name+'"');}
 function playPlaylist(name){const p=plLoad(),ids=p[name]||[];const works=ids.map(id=>ALL.find(x=>x.id===id)).filter(Boolean);if(!works.length){toast('Playlist is empty');return;}QUEUE=works;playWork(works[0]);modal('plview',false);}
 function plRender(){const p=plLoad(),names=Object.keys(p),el=$('pllist');

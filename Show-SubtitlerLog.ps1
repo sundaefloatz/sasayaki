@@ -1482,6 +1482,49 @@ function Invoke-LibTitleOverride($o) {
     @{ ok = $true; id = $id; title = $title } | ConvertTo-Json -Compress
 }
 
+# --- playlists: a SERVER-SIDE sidecar (_data/playlists.json), shape { name -> [work id, ...] }.
+# Previously these lived in the browser's localStorage, which meant a playlist built on the phone
+# didn't exist on the desktop, and clearing site data silently destroyed hand-curated ordering.
+# Playlists are user-authored content, so they belong next to the other user-owned state
+# (library_state.json, title_overrides.json) where the normal library backup already covers them.
+function Get-PlaylistsPath { Join-Path (Split-Path $PSScriptRoot -Parent) '_data\playlists.json' }
+function Get-Playlists {
+    $p = Get-PlaylistsPath
+    if (Test-Path -LiteralPath $p) {
+        try {
+            $o = Get-Content -LiteralPath $p -Raw | ConvertFrom-Json
+            $h = [ordered]@{}
+            foreach ($pr in $o.PSObject.Properties) { $h[$pr.Name] = @($pr.Value | ForEach-Object { "$_" }) }
+            return $h
+        }
+        catch {}
+    }
+    return [ordered]@{}
+}
+function Save-Playlists($h) {
+    $p = Get-PlaylistsPath; $d = Split-Path $p -Parent
+    if (-not (Test-Path -LiteralPath $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }
+    # -AsArray on each value would be wrong here (the VALUES are arrays, the top level is a map),
+    # so build the JSON from an ordered hashtable and let ConvertTo-Json keep single-item arrays
+    # intact by forcing them through @() first -- a 1-track playlist must not collapse to a string.
+    $out = [ordered]@{}
+    foreach ($k in $h.Keys) { $out[$k] = @($h[$k]) }
+    ($out | ConvertTo-Json -Depth 4 -Compress) | Set-Content -LiteralPath $p -Encoding UTF8
+}
+function Invoke-PlaylistSave($o) {
+    # POST { playlists: { name: [ids] } } -- a whole-map replace, which keeps the client simple
+    # (it already holds the full set) and makes reordering/renaming/deleting one code path.
+    if ($null -eq $o -or $null -eq $o.playlists) { return (@{ ok = $false; error = 'no playlists' } | ConvertTo-Json -Compress) }
+    $h = [ordered]@{}
+    foreach ($pr in $o.playlists.PSObject.Properties) {
+        $name = "$($pr.Name)".Trim()
+        if (-not $name) { continue }
+        $h[$name] = @($pr.Value | ForEach-Object { "$_" } | Where-Object { $_ })
+    }
+    Save-Playlists $h
+    @{ ok = $true; count = $h.Keys.Count } | ConvertTo-Json -Compress
+}
+
 # extensions that carry a real video track (vs. audio-only) -- mirrors the VID/AUD split other
 # pipeline scripts (library_stats.py, analyze_audio.py) already use for the same classification.
 $script:VidExt = '.mp4', '.mkv', '.webm', '.mov', '.avi', '.m4v', '.ts'
@@ -3103,6 +3146,20 @@ function Start-Server {
                     $raw = $reader.ReadToEnd(); $reader.Close()
                     $o = $null; try { $o = $raw | ConvertFrom-Json } catch {}
                     $body = Invoke-LibTitleOverride $o
+                    $res.ContentType = 'application/json; charset=utf-8'
+                }
+                elseif ($path -eq '/playlists.json') {
+                    # user-authored playlists, server-side so they follow the user across devices
+                    $body = (Get-Playlists | ConvertTo-Json -Depth 4 -Compress)
+                    if ([string]::IsNullOrWhiteSpace($body) -or $body -eq 'null') { $body = '{}' }
+                    $res.ContentType = 'application/json; charset=utf-8'
+                }
+                elseif ($path -eq '/playlists/save' -and $ctx.Request.HttpMethod -eq 'POST') {
+                    # POST { playlists: { name: [ids] } } -- whole-map replace (see Invoke-PlaylistSave)
+                    $reader = [IO.StreamReader]::new($ctx.Request.InputStream, $ctx.Request.ContentEncoding)
+                    $raw = $reader.ReadToEnd(); $reader.Close()
+                    $o = $null; try { $o = $raw | ConvertFrom-Json } catch {}
+                    $body = Invoke-PlaylistSave $o
                     $res.ContentType = 'application/json; charset=utf-8'
                 }
                 elseif ($path -like '/library/*' -and $ctx.Request.HttpMethod -eq 'POST') {
