@@ -90,6 +90,35 @@ body{color:var(--txt);font:14px/1.5 var(--body);-webkit-font-smoothing:antialias
 .fpcov video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .fpcov img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .fpcov.playing{transform:scale(1)}
+
+/* ============ VIDEO THEATER MODE (ported from library.html, see that file's comment
+   for the full rationale) — native aspect stage, contain-fit, cinema idle-hide chrome. */
+#fullplayer[data-kind="video"] .fpmain{max-width:min(96vw,1600px)}
+#fullplayer[data-kind="video"] .fpcov{
+  width:auto;height:min(calc(100vh - 330px),78vh);max-width:96vw;
+  aspect-ratio:var(--vid-ar,16/9);
+  border-radius:10px;background:#000;cursor:pointer;
+  box-shadow:0 18px 60px rgba(0,0,0,.75);}
+#fullplayer[data-kind="video"] .fpcov video{object-fit:contain}
+#fullplayer[data-kind="video"] .fpti{margin-top:18px;font-size:clamp(15px,2.4vw,20px)}
+#fullplayer[data-kind="video"] .fpbg{filter:blur(60px) brightness(.16) saturate(1.1)}
+#fullplayer[data-kind="video"] .fpcov.playing{transform:none}
+.fpvidhint{position:absolute;inset:0;z-index:2;display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.32);transition:opacity .2s}
+#fullplayer[data-kind="video"] .fpcov.paused .fpvidhint{display:flex}
+.fpvidhint svg{width:58px;height:58px;color:#fff;filter:drop-shadow(0 3px 12px rgba(0,0,0,.6))}
+#fullplayer[data-kind="video"].fp-idle .fptop,
+#fullplayer[data-kind="video"].fp-idle .fpti,
+#fullplayer[data-kind="video"].fp-idle .fpcr,
+#fullplayer[data-kind="video"].fp-idle .fpseek,
+#fullplayer[data-kind="video"].fp-idle .fpctrl,
+#fullplayer[data-kind="video"].fp-idle .fpvol,
+#fullplayer[data-kind="video"].fp-idle .fprow2{opacity:0;pointer-events:none;transition:opacity .45s}
+#fullplayer[data-kind="video"].fp-idle{cursor:none}
+#fullplayer .fptop,#fullplayer .fpti,#fullplayer .fpcr,#fullplayer .fpseek,
+#fullplayer .fpctrl,#fullplayer .fpvol,#fullplayer .fprow2{transition:opacity .2s}
+#fullplayer:not([data-kind="video"]) .vidonly{display:none}
+.fprow2{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:20px;flex-wrap:wrap}
 .fpti{font:700 clamp(17px,4.5vw,23px)/1.3 "Noto Serif JP",var(--disp);color:#fff;text-align:center;margin-top:26px;
   max-width:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .fpcr{font:600 12px var(--mono);color:var(--pk2);text-transform:uppercase;letter-spacing:.08em;margin-top:9px}
@@ -112,11 +141,11 @@ body{color:var(--txt);font:14px/1.5 var(--body);-webkit-font-smoothing:antialias
 .fprepeat1{position:absolute;top:1px;right:1px;font:800 8px var(--mono);line-height:1;background:var(--pk);
   color:#fff;border-radius:5px;padding:1px 3px;display:none}
 #fprepeat.rep-one .fprepeat1{display:block}
-.fpvol{display:flex;align-items:center;gap:12px;width:min(70%,280px);margin-top:20px}
-.fpvol .fps{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted);
+.fps{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted);
   cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;flex:none;font-size:15px}
-.fpvol .fps:hover{color:var(--txt);border-color:var(--muted)}
-.fpvol .fps svg{width:18px;height:18px}
+.fps:hover{color:var(--txt);border-color:var(--muted)}.fps.on{color:var(--pk2);border-color:var(--pk)}
+.fps svg{width:18px;height:18px}
+.fpvol{display:flex;align-items:center;gap:12px;width:min(70%,280px);margin-top:20px}
 .fpvol .fprange{flex:1}
 @media(min-width:900px){.fpcov{width:300px}}
 </style>
@@ -158,7 +187,7 @@ body{color:var(--txt);font:14px/1.5 var(--body);-webkit-font-smoothing:antialias
     <button class="fpx" id="fpclose" title="minimize"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
   </div>
   <div class="fpmain">
-    <div class="fpcov" id="fpcov"><video id="au" preload="none" playsinline></video><img id="fpcovimg" alt=""></div>
+    <div class="fpcov" id="fpcov"><video id="au" preload="none" playsinline></video><img id="fpcovimg" alt=""><div class="fpvidhint" id="fpvidhint"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div></div>
     <div class="fpti" id="fpti2">—</div>
     <div class="fpcr" id="fpcr2"></div>
     <div class="fpseek">
@@ -178,6 +207,10 @@ body{color:var(--txt);font:14px/1.5 var(--body);-webkit-font-smoothing:antialias
     <div class="fpvol" id="fpvolrow">
       <button class="fps" id="fpvolbtn" title="mute / unmute"></button>
       <input type="range" class="fprange vol" id="fpvolrange" min="0" max="100" value="100" step="1">
+    </div>
+    <div class="fprow2">
+      <button class="fps vidonly" id="fpfs" title="fullscreen (F)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
+      <button class="fps vidonly" id="fppip" title="picture-in-picture (P)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><rect x="12" y="11" width="8" height="7" rx="1" fill="currentColor" stroke="none"/></svg></button>
     </div>
   </div>
 </div>
@@ -242,6 +275,7 @@ function refreshFull(w){
   $('fpti2').textContent=titleOf(w);$('fpcr2').textContent=w.creator;
   $('fptot').textContent=w.dur?fmtT(w.dur):'0:00';
   const img=$('fpcovimg'),bg=$('fpbg');
+  fp.dataset.kind = (w.kind==='video') ? 'video' : 'audio';   // drives theater mode in CSS
   if(w.kind==='video'){img.removeAttribute('src');img.style.display='none';bg.style.backgroundImage=w.thumb?`url("${w.thumb}")`:'';}
   else if(w.thumb){img.src=w.thumb;img.style.display='';bg.style.backgroundImage=`url("${w.thumb}")`;}
   else{img.removeAttribute('src');img.style.display='none';bg.style.backgroundImage='';}
@@ -260,10 +294,75 @@ function playWork(w){if(!w)return;curId=w.id;
   $('tot').textContent=w.dur?fmtT(w.dur):'0:00';$('cur').textContent='0:00';$('seek').value=0;
   cover($('pcov'),w);markActive();refreshFull(w);syncMediaSession(w);
 }
-function openFull(){if(!curId)return;fpOpen=true;fp.classList.add('up');ppIcon();}
-function closeFull(){fpOpen=false;fp.classList.remove('up');}
+function openFull(){if(!curId)return;fpOpen=true;fp.classList.add('up');ppIcon();
+  if(window.fpVideoWake)window.fpVideoWake();}
+function closeFull(){fpOpen=false;fp.classList.remove('up');fp.classList.remove('fp-idle');
+  if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});}
 $('pcov').addEventListener('click',openFull);$('pti').addEventListener('click',openFull);$('pcr').addEventListener('click',openFull);
 $('fpclose').addEventListener('click',closeFull);
+/* ---- video theater behaviour: native aspect, click-to-toggle, fullscreen, PiP, idle-hide ----
+   Ported from library.html (see that file for the full rationale comment). No SASA_EMBEDDED
+   guard needed here -- app.html IS the shell, never embedded inside another page's iframe. */
+(function videoTheater(){
+  const cov=$('fpcov'),fsBtn=$('fpfs'),pipBtn=$('fppip');
+  const isVideo=()=>fp.dataset.kind==='video';
+  function applyAspect(){
+    const vw=au.videoWidth,vh=au.videoHeight;
+    if(vw&&vh){
+      cov.style.setProperty('--vid-ar',vw+' / '+vh);
+    }else if(fp.dataset.kind==='video'&&au.readyState>=1){
+      fp.dataset.kind='audio';   // audio-only despite the video file extension
+      const cur=QUEUE.find(x=>x.id===curId),img=$('fpcovimg');
+      if(cur&&cur.thumb){img.src=cur.thumb;img.style.display='';}
+    }
+  }
+  au.addEventListener('loadedmetadata',applyAspect);
+  au.addEventListener('resize',applyAspect);
+  const syncPaused=()=>cov.classList.toggle('paused',au.paused);
+  au.addEventListener('play',syncPaused);au.addEventListener('pause',syncPaused);syncPaused();
+  let clickT=null;
+  cov.addEventListener('click',e=>{
+    if(!isVideo())return;
+    if(clickT){clearTimeout(clickT);clickT=null;toggleFs();return;}
+    clickT=setTimeout(()=>{clickT=null;if(au.paused)au.play().catch(()=>{});else au.pause();},220);
+  });
+  function toggleFs(){
+    const cur=document.fullscreenElement||document.webkitFullscreenElement;
+    if(cur){(document.exitFullscreen||document.webkitExitFullscreen).call(document);}
+    else{(fp.requestFullscreen||fp.webkitRequestFullscreen||(()=>{})).call(fp);}
+  }
+  if(fsBtn)fsBtn.addEventListener('click',toggleFs);
+  document.addEventListener('fullscreenchange',()=>{
+    if(fsBtn)fsBtn.classList.toggle('on',!!document.fullscreenElement);
+  });
+  if(pipBtn){
+    if(!document.pictureInPictureEnabled)pipBtn.style.display='none';
+    pipBtn.addEventListener('click',async()=>{
+      try{
+        if(document.pictureInPictureElement)await document.exitPictureInPicture();
+        else if(au.readyState>=1)await au.requestPictureInPicture();
+      }catch(e){}
+    });
+    au.addEventListener('enterpictureinpicture',()=>pipBtn.classList.add('on'));
+    au.addEventListener('leavepictureinpicture',()=>pipBtn.classList.remove('on'));
+  }
+  let idleT=null;
+  function wake(){
+    fp.classList.remove('fp-idle');
+    clearTimeout(idleT);
+    if(isVideo()&&!au.paused)idleT=setTimeout(()=>fp.classList.add('fp-idle'),3000);
+  }
+  ['mousemove','mousedown','touchstart','keydown','wheel'].forEach(ev=>
+    fp.addEventListener(ev,wake,{passive:true}));
+  au.addEventListener('pause',()=>{clearTimeout(idleT);fp.classList.remove('fp-idle');});
+  au.addEventListener('play',wake);
+  window.fpVideoWake=wake;
+  document.addEventListener('keydown',e=>{
+    if(!fpOpen||!isVideo()||e.target.tagName==='INPUT')return;
+    if(e.code==='KeyF'){e.preventDefault();toggleFs();}
+    else if(e.code==='KeyP'&&pipBtn){e.preventDefault();pipBtn.click();}
+  });
+})();
 
 /* ---- shuffle + repeat (shares localStorage keys with library.html's standalone player) ---- */
 let SHUFFLE=localStorage.getItem('sasa_shuffle')==='1';

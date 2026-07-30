@@ -446,6 +446,47 @@ html[data-embedded="1"] #trackdrawer,html[data-embedded="1"] #transcript{display
 .fpcov img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .fpcov canvas{width:100%;height:100%;display:block}
 .fpcov.playing{transform:scale(1)}
+
+/* ============ VIDEO THEATER MODE ==================================================
+   For kind=video the cover box stops being a 300px square crop and becomes a real
+   video stage: native aspect ratio (--vid-ar, measured from the decoded stream so
+   vertical/Shorts-style clips work too), height-driven so the transport always stays
+   on screen, object-fit:contain so nothing is cropped, and a neutral cinema surround
+   instead of the pink art glow. The <video> element is NEVER reparented or
+   display:none'd -- only restyled in place (see the note above). ================= */
+#fullplayer[data-kind="video"] .fpmain{max-width:min(96vw,1600px)}
+#fullplayer[data-kind="video"] .fpcov{
+  width:auto;height:min(calc(100vh - 330px),78vh);max-width:96vw;
+  aspect-ratio:var(--vid-ar,16/9);
+  border-radius:10px;background:#000;cursor:pointer;
+  box-shadow:0 18px 60px rgba(0,0,0,.75);}
+#fullplayer[data-kind="video"] .fpcov video{object-fit:contain}
+#fullplayer[data-kind="video"] .fpti{margin-top:18px;font-size:clamp(15px,2.4vw,20px)}
+#fullplayer[data-kind="video"] .fpbg{filter:blur(60px) brightness(.16) saturate(1.1)}
+/* a video work has no meaningful cover art to glow from -- keep the surround neutral */
+#fullplayer[data-kind="video"] .fpcov.playing{transform:none}
+
+/* tap/click feedback + a centred play glyph when paused mid-video */
+.fpvidhint{position:absolute;inset:0;z-index:2;display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.32);transition:opacity .2s}
+#fullplayer[data-kind="video"] .fpcov.paused .fpvidhint{display:flex}
+.fpvidhint svg{width:58px;height:58px;color:#fff;filter:drop-shadow(0 3px 12px rgba(0,0,0,.6))}
+
+/* cinema idle: while a video is PLAYING and the pointer has been still, fade the chrome
+   away so only the picture remains. Any pointer/key activity brings it straight back.
+   opacity+pointer-events (never display:none) so nothing reflows or loses focus. */
+#fullplayer[data-kind="video"].fp-idle .fptop,
+#fullplayer[data-kind="video"].fp-idle .fpti,
+#fullplayer[data-kind="video"].fp-idle .fpcr,
+#fullplayer[data-kind="video"].fp-idle .fpseek,
+#fullplayer[data-kind="video"].fp-idle .fpctrl,
+#fullplayer[data-kind="video"].fp-idle .fpvol,
+#fullplayer[data-kind="video"].fp-idle .fprow2{opacity:0;pointer-events:none;transition:opacity .45s}
+#fullplayer[data-kind="video"].fp-idle{cursor:none}
+#fullplayer .fptop,#fullplayer .fpti,#fullplayer .fpcr,#fullplayer .fpseek,
+#fullplayer .fpctrl,#fullplayer .fpvol,#fullplayer .fprow2{transition:opacity .2s}
+/* video-only buttons: hidden entirely for audio works so the row stays clean */
+#fullplayer:not([data-kind="video"]) .vidonly{display:none}
 .fpti{font:700 clamp(17px,4.5vw,23px)/1.3 "Noto Serif JP",var(--disp);color:#fff;text-align:center;margin-top:26px;
   max-width:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .fpcr{font:600 12px var(--mono);color:var(--pk2);text-transform:uppercase;letter-spacing:.08em;margin-top:9px;cursor:pointer}
@@ -508,7 +549,7 @@ html[data-embedded="1"] #trackdrawer,html[data-embedded="1"] #transcript{display
     <button class="fpx" id="fpcc2" title="subtitles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 11h2M7 14h4M13 11h4M15 14h2"/></svg></button>
   </div>
   <div class="fpmain">
-    <div class="fpcov" id="fpcov"><video id="au" preload="none" playsinline></video><img id="fpcovimg" alt=""></div>
+    <div class="fpcov" id="fpcov"><video id="au" preload="none" playsinline></video><img id="fpcovimg" alt=""><div class="fpvidhint" id="fpvidhint"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div></div>
     <div class="fpti" id="fpti2">—</div>
     <div class="fpcr" id="fpcr2"></div>
     <div class="fpseek">
@@ -546,6 +587,8 @@ html[data-embedded="1"] #trackdrawer,html[data-embedded="1"] #transcript{display
           <div class="fpeqchips" id="fpeqchips"></div>
         </div>
       </div>
+      <button class="fps vidonly" id="fpfs" title="fullscreen (F)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
+      <button class="fps vidonly" id="fppip" title="picture-in-picture (P)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><rect x="12" y="11" width="8" height="7" rx="1" fill="currentColor" stroke="none"/></svg></button>
       <button class="fps" id="fpext" title="open elsewhere"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></button>
     </div>
   </div>
@@ -1320,6 +1363,9 @@ function refreshFull(w){
   $('fpti2').textContent=titleOf(w);$('fpcr2').textContent=w.creator;
   $('fptot').textContent=w.dur?fmtT(w.dur):'0:00';
   const img=$('fpcovimg'),bg=$('fpbg');
+  // data-kind drives theater mode in CSS (see VIDEO THEATER MODE) -- set it before the
+  // art swap so the stage is already the right shape when the first frame paints.
+  fp.dataset.kind = (w.kind==='video') ? 'video' : 'audio';
   if(w.kind==='video'){   // let the real video show through instead of a static cover frame
     img.removeAttribute('src');img.style.display='none';
     bg.style.backgroundImage=w.thumb?`url("${w.thumb}")`:'';
@@ -1331,8 +1377,12 @@ function refreshFull(w){
     $('fpcov').style.setProperty('--fpglow',glow);
   });
 }
-function openFull(){if(!curId)return;fpOpen=true;fp.classList.add('up');document.body.classList.add('fp-open');fpPpIcon();}
-function closeFull(){fpOpen=false;fp.classList.remove('up');document.body.classList.remove('fp-open');}
+function openFull(){if(!curId)return;fpOpen=true;fp.classList.add('up');document.body.classList.add('fp-open');fpPpIcon();
+  if(window.fpVideoWake)window.fpVideoWake();}   // chrome starts visible; idle timer re-arms itself
+function closeFull(){fpOpen=false;fp.classList.remove('up');document.body.classList.remove('fp-open');
+  fp.classList.remove('fp-idle');
+  // leaving the overlay must not leave the browser stuck in fullscreen
+  if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});}
 function fpPpIcon(){$('fppp').innerHTML=au.paused?ICON_PLAY:ICON_PAUSE;}
 /* ---- track drawer: a DLsite work lists its product's sibling tracks; anything else lists the
    current QUEUE. Row tap plays directly (audio never stops, drawer stays open). ---------------- */
@@ -1494,6 +1544,83 @@ fpseekEl.addEventListener('input',()=>{seeking=true;if(au.duration)$('fpcur').te
 fpseekEl.addEventListener('change',()=>{if(au.duration)au.currentTime=au.duration*fpseekEl.value/1000;seeking=false;});
 $('fpclose').addEventListener('click',closeFull);
 $('fpcc2').addEventListener('click',()=>toggleCC());
+/* ---- video theater behaviour: native aspect, click-to-toggle, fullscreen, PiP, idle-hide ----
+   All of it is additive and gated on the work being kind=video, so audio playback is untouched. */
+(function videoTheater(){
+  const cov=$('fpcov'),fsBtn=$('fpfs'),pipBtn=$('fppip');
+  const isVideo=()=>fp.dataset.kind==='video';
+  // real aspect ratio from the decoded stream, so 9:16 vertical clips aren't letterboxed into 16:9.
+  // Also demote in the one direction that's safe: `kind` is decided server-side from the FILE
+  // EXTENSION, so an audio-only .mp4/.m4v (common for DLsite rips and some stream grabs) arrives
+  // tagged video and used to render as a black rectangle. If the stream carries no picture, fall
+  // back to normal cover-art presentation. We never auto-PROMOTE audio->video: an .m4a with
+  // embedded album art can expose a decoded frame, and flipping a plain audio work into theater
+  // mode mid-track would be a jarring regression.
+  function applyAspect(){
+    const vw=au.videoWidth,vh=au.videoHeight;
+    if(vw&&vh){
+      cov.style.setProperty('--vid-ar',vw+' / '+vh);
+    }else if(fp.dataset.kind==='video'&&au.readyState>=1){
+      fp.dataset.kind='audio';                       // audio-only despite the video extension
+      const cur=QUEUE.find(x=>x.id===curId),img=$('fpcovimg');
+      if(cur&&cur.thumb){img.src=cur.thumb;img.style.display='';}
+    }
+  }
+  au.addEventListener('loadedmetadata',applyAspect);
+  au.addEventListener('resize',applyAspect);          // fires when the stream's dimensions are known/change
+  // paused-state glyph over the picture (CSS shows it only for video)
+  const syncPaused=()=>cov.classList.toggle('paused',au.paused);
+  au.addEventListener('play',syncPaused);au.addEventListener('pause',syncPaused);syncPaused();
+  // click the picture to toggle, double-click for fullscreen (standard video-player idiom)
+  let clickT=null;
+  cov.addEventListener('click',e=>{
+    if(!isVideo())return;                             // audio: cover art stays non-interactive
+    if(clickT){clearTimeout(clickT);clickT=null;toggleFs();return;}
+    clickT=setTimeout(()=>{clickT=null;if(au.paused)au.play().catch(()=>{});else au.pause();},220);
+  });
+  // fullscreen the OVERLAY (not the bare <video>) so our own transport survives in fullscreen
+  function toggleFs(){
+    const el=fp;
+    const cur=document.fullscreenElement||document.webkitFullscreenElement;
+    if(cur){(document.exitFullscreen||document.webkitExitFullscreen).call(document);}
+    else{(el.requestFullscreen||el.webkitRequestFullscreen||(()=>{})).call(el);}
+  }
+  if(fsBtn)fsBtn.addEventListener('click',toggleFs);
+  document.addEventListener('fullscreenchange',()=>{
+    if(fsBtn)fsBtn.classList.toggle('on',!!document.fullscreenElement);
+  });
+  // picture-in-picture: keep watching while browsing the rest of the library
+  if(pipBtn){
+    if(!document.pictureInPictureEnabled)pipBtn.style.display='none';
+    pipBtn.addEventListener('click',async()=>{
+      try{
+        if(document.pictureInPictureElement)await document.exitPictureInPicture();
+        else if(au.readyState>=1)await au.requestPictureInPicture();
+      }catch(e){}
+    });
+    au.addEventListener('enterpictureinpicture',()=>pipBtn.classList.add('on'));
+    au.addEventListener('leavepictureinpicture',()=>pipBtn.classList.remove('on'));
+  }
+  // cinema idle: hide the chrome after 3s of stillness while a video plays
+  let idleT=null;
+  function wake(){
+    fp.classList.remove('fp-idle');
+    clearTimeout(idleT);
+    if(isVideo()&&!au.paused)idleT=setTimeout(()=>fp.classList.add('fp-idle'),3000);
+  }
+  ['mousemove','mousedown','touchstart','keydown','wheel'].forEach(ev=>
+    fp.addEventListener(ev,wake,{passive:true}));
+  au.addEventListener('pause',()=>{clearTimeout(idleT);fp.classList.remove('fp-idle');});
+  au.addEventListener('play',wake);
+  window.fpVideoWake=wake;   // openFull() calls this so the chrome starts visible
+  // F = fullscreen, P = picture-in-picture (only while a video is up; other keys unchanged)
+  document.addEventListener('keydown',e=>{
+    if(!fpOpen||!isVideo()||e.target.tagName==='INPUT')return;
+    if(window.SASA_EMBEDDED)return;                   // the /app shell owns playback when embedded
+    if(e.code==='KeyF'){e.preventDefault();toggleFs();}
+    else if(e.code==='KeyP'&&pipBtn){e.preventDefault();pipBtn.click();}
+  });
+})();
 $('fptracks').addEventListener('click',()=>{tdOpen?closeDrawer():openDrawer();$('fptracks').classList.toggle('on',tdOpen);});
 $('tdclose').addEventListener('click',()=>{closeDrawer();$('fptracks').classList.remove('on');});
 $('fpcr2').addEventListener('click',()=>{const w=QUEUE.find(x=>x.id===curId);if(w)location.href='/wiki#'+encodeURIComponent(w.creator);});
