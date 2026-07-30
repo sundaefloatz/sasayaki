@@ -68,7 +68,7 @@ def find_sub(audio, ext):
 
 
 def resolve(work_id):
-    # ids come from audio_index.json, built on Windows -> backslash-separated. On Linux (the Zettlab
+    # ids come from audio_index.json, built on Windows -> backslash-separated. On Linux (e.g. the
     # container) os.sep is "/", so replacing ONLY "/" left every backslash literal -- the whole id
     # became one bogus filename and every /subs lookup silently resolved to nothing. Normalize BOTH
     # separators to os.sep (matches the same fix already applied to Resolve-AudioPath in the PS server).

@@ -1825,7 +1825,7 @@ function Get-SandboxLibrary {
     # dir prefix (yt->youtube, cien->ci-en, twitcasting/openrec/fanbox), so the sandbox surfaces every
     # exclusive-stream source the scrapers stage, filterable by the same source bar core uses. Emits the
     # SAME row schema Get-Library does. Ids are ROOT-RELATIVE with FORWARD slashes (the /audio + /subs
-    # routes resolve them; forward slashes survive the Linux Zettlab container).
+    # routes resolve them; forward slashes survive a Linux container).
     $now = [Environment]::TickCount64
     if ($script:SbxLibCache -and [math]::Abs($now - $script:SbxLibAt) -lt 30000) { return $script:SbxLibCache }
     $root = Split-Path $PSScriptRoot -Parent
@@ -2344,7 +2344,7 @@ function Resolve-AudioPath {
     param([string]$Id)
     if ([string]::IsNullOrWhiteSpace($Id)) { return $null }
     $root = if ($ArchiveRoot) { $ArchiveRoot } else { Split-Path $PSScriptRoot -Parent }   # $ArchiveRoot is injected when this runs in the streaming runspace ($PSScriptRoot isn't available there)
-    $rel = ($Id -replace '\\', '/').TrimStart('/')   # forward slashes normalize on BOTH OSes via GetFullPath below; on Linux a '\' would be a literal filename char -> audio never resolves (Zettlab container fix)
+    $rel = ($Id -replace '\\', '/').TrimStart('/')   # forward slashes normalize on BOTH OSes via GetFullPath below; on Linux a '\' would be a literal filename char -> audio never resolves (Linux container fix)
     try { $full = [IO.Path]::GetFullPath((Join-Path $root $rel)) } catch { return $null }
     # trailing separator on the root prevents a sibling whose name is prefixed by the root (…\Asmr-backup) from passing
     $rootFull = [IO.Path]::GetFullPath($root).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar

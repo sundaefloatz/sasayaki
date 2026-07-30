@@ -1,4 +1,4 @@
-# Sasayaki app (Show-SubtitlerLog.ps1 -Serve) as a Linux container — the "run it on the Zettlab" target.
+# Sasayaki app (Show-SubtitlerLog.ps1 -Serve) as a Linux container — the "run it on a home NAS" target.
 #
 # The app is BIND-MOUNTED at runtime (not COPYd into the image) so it always tracks the repo and the
 # same image works for local-test and the NAS. This image supplies only the runtime:
