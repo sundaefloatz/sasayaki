@@ -1453,13 +1453,38 @@ function Invoke-LibRetrigger($o) {
 }
 
 function Get-TitleOverridesPath { Join-Path (Split-Path $PSScriptRoot -Parent) '_data\title_overrides.json' }
+function Get-NormalizedWorkId([string]$Id) {
+    # work ids carry the separator of whichever OS built the index -- '\' from a Windows run, '/' from
+    # the Docker core or the NAS (same reason Split-WorkId splits on [\\/]+). The override sidecar is
+    # SYNCED between them, so an exact-string lookup meant a title set on Windows silently did nothing
+    # on the Linux replica. Key and look up on one canonical form instead.
+    "$Id" -replace '\\', '/'
+}
 function Get-TitleOverrides {
     # #112a per-work title override sidecar -- SEPARATE from _wiki/title_translations.json (that
     # file is pipeline-owned, rewritten wholesale by translate_titles.py; a user override living
-    # there would get silently clobbered on the next run). { id -> custom display title }.
+    # there would get silently clobbered on the next run).
+    #   { id -> "display title" }            overrides the EN/display title (what the UI writes)
+    #   { id -> { title?, ja? } }            overrides either language independently
+    # The object form exists because a work whose FILENAME had to be shortened (Linux caps a path
+    # component at 255 bytes) still needs its full Japanese title on screen -- and 'ja' comes from
+    # the filename, so a title-only override would leave JA display mode showing the truncation.
     $p = Get-TitleOverridesPath
     if (Test-Path -LiteralPath $p) {
-        try { $h = @{}; foreach ($pr in (Get-Content -LiteralPath $p -Raw | ConvertFrom-Json).PSObject.Properties) { $h[$pr.Name] = "$($pr.Value)" }; return $h } catch {}
+        try {
+            $h = @{}
+            foreach ($pr in (Get-Content -LiteralPath $p -Raw | ConvertFrom-Json).PSObject.Properties) {
+                $v = $pr.Value
+                if ($null -eq $v) { continue }
+                if ($v -is [string]) { $h[(Get-NormalizedWorkId $pr.Name)] = "$v"; continue }
+                $o = @{}
+                foreach ($k in 'title', 'ja') {
+                    if ($v.PSObject.Properties[$k] -and -not [string]::IsNullOrWhiteSpace("$($v.$k)")) { $o[$k] = "$($v.$k)" }
+                }
+                if ($o.Count) { $h[(Get-NormalizedWorkId $pr.Name)] = $o }
+            }
+            return $h
+        } catch {}
     }
     return @{}
 }
@@ -1467,7 +1492,10 @@ function Save-TitleOverrides($h) {
     $p = Get-TitleOverridesPath; $d = Split-Path $p -Parent
     if (-not (Test-Path -LiteralPath $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }
     ($h | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath $p -Encoding UTF8
-    $script:LibAt = 0   # invalidate the library cache so the new title shows on the next load
+    # invalidate BOTH library caches so the new title shows on the next load -- the sandbox realm
+    # applies overrides too now, and it has its own separate cache stamp
+    $script:LibAt = 0
+    $script:SbxLibAt = 0
 }
 function Invoke-LibTitleOverride($o) {
     # POST {id, title}. Empty/whitespace title CLEARS the override (reverts to whatever Get-Library
@@ -1477,7 +1505,17 @@ function Invoke-LibTitleOverride($o) {
     if (-not (Resolve-AudioPath $id)) { return (@{ ok = $false; error = 'unknown work' } | ConvertTo-Json -Compress) }
     $h = Get-TitleOverrides
     $title = "$($o.title)".Trim()
-    if ($title) { $h[$id] = $title } elseif ($h.ContainsKey($id)) { $h.Remove($id) }
+    $key = Get-NormalizedWorkId $id
+    $cur = $h[$key]
+    if ($cur -is [hashtable]) {
+        # an object-form entry may carry a 'ja' override this endpoint knows nothing about (e.g. the
+        # full Japanese title of a work whose filename had to be shortened). Edit 'title' in place
+        # rather than replacing the entry, or that would be silently discarded.
+        if ($title) { $cur['title'] = $title } else { $cur.Remove('title') }
+        if ($cur.Count) { $h[$key] = $cur } else { $h.Remove($key) }
+    }
+    elseif ($title) { $h[$key] = $title }
+    elseif ($h.ContainsKey($key)) { $h.Remove($key) }
     Save-TitleOverrides $h
     @{ ok = $true; id = $id; title = $title } | ConvertTo-Json -Compress
 }
@@ -1716,8 +1754,12 @@ function Get-Library {
         $ov = Get-TitleOverrides
         if ($ov.Count) {
             foreach ($w in $works) {
-                $t = $ov["$($w.id)"]
-                if ($t) { $w.title = "$t"; $w.titleOverridden = $true }
+                $t = $ov[(Get-NormalizedWorkId $w.id)]
+                if (-not $t) { continue }
+                if ($t -is [string]) { $w.title = "$t"; $w.titleOverridden = $true; continue }
+                # object form: each language independently (see Get-TitleOverrides)
+                if ($t['title']) { $w.title = "$($t['title'])"; $w.titleOverridden = $true }
+                if ($t['ja']) { $w.ja = "$($t['ja'])"; $w.titleOverridden = $true }
             }
         }
     } catch {}
@@ -1820,6 +1862,23 @@ function Get-SandboxLibrary {
             }
         }
     }
+    # --- title overrides, same as Get-Library applies them (see #112a there). Sandbox rows used to
+    # skip this entirely, which failed silently-positive: POST /library/title resolves a sandbox id
+    # fine, answers ok:true and persists the entry, but the card kept showing the filename forever.
+    # That mattered once a sandbox work's filename had to be SHORTENED to fit Linux's 255-byte cap --
+    # the override is the only place its full title survives.
+    try {
+        $ov = Get-TitleOverrides
+        if ($ov.Count) {
+            foreach ($w in $works) {
+                $t = $ov[(Get-NormalizedWorkId $w.id)]
+                if (-not $t) { continue }
+                if ($t -is [string]) { $w.title = "$t"; $w.titleOverridden = $true; continue }
+                if ($t['title']) { $w.title = "$($t['title'])"; $w.titleOverridden = $true }
+                if ($t['ja']) { $w.ja = "$($t['ja'])"; $w.titleOverridden = $true }
+            }
+        }
+    } catch {}
     $script:SbxLibCache = $(if ($works.Count) { $works | ConvertTo-Json -Depth 5 -Compress -AsArray } else { '[]' })
     $script:SbxLibAt = $now
     $script:SbxLibCache
