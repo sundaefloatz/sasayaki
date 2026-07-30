@@ -226,6 +226,10 @@ body.tr-open .player.up{right:calc(380px + 18px)}
 .tdhead .tdn{flex:none;font:700 10px var(--mono);color:var(--muted)}
 .tdhead .tdx{cursor:pointer;color:var(--muted);font-size:20px;line-height:1;background:none;border:none}
 .tdhead .tdx:hover{color:var(--pk2)}
+.tdhead .tdsave{flex:none;cursor:pointer;background:none;border:1px solid var(--line2);border-radius:5px;
+  color:var(--muted);font:700 9px var(--mono);padding:4px 7px;letter-spacing:.05em;white-space:nowrap}
+.tdhead .tdsave:hover{color:var(--pk2);border-color:var(--pk)}
+.tdhead .tdsave.ok{color:var(--pk2);border-color:var(--pk)}
 .tdbody{flex:1;overflow-y:auto;padding:6px 0 12px}
 .tdrow{display:flex;align-items:center;gap:12px;padding:10px 17px;cursor:pointer;border-left:2px solid transparent;transition:background .15s}
 .tdrow:hover{background:rgba(255,255,255,.05)}
@@ -316,7 +320,7 @@ body.tr-open .player.up{right:calc(380px + 18px)}
 
 <!-- track drawer: DLsite product siblings, else the current queue; plus playlists to load -->
 <div id="trackdrawer">
-  <div class="tdhead"><span class="tdt" id="tdtitle">Tracks</span><span class="tdn" id="tdcount"></span><button class="tdx" id="tdclose">×</button></div>
+  <div class="tdhead"><span class="tdt" id="tdtitle">Tracks</span><span class="tdn" id="tdcount"></span><button class="tdsave" id="tdsave" title="save this list as a playlist">+ playlist</button><button class="tdx" id="tdclose">×</button></div>
   <div class="tdbody" id="tdbody"></div>
 </div>
 
@@ -421,8 +425,9 @@ function trackSiblings(w){
       if(na!=null&&nb!=null)return na-nb;
       return String(a.base).localeCompare(String(b.base));});
 }
-/* playlists are server-side (_data/playlists.json) -- the shell only READS them: curation happens
-   on the library page, but loading one is a playback action, so it belongs here. */
+/* playlists are server-side (_data/playlists.json). Editing a playlist's contents stays on the
+   library page; what lives here is what's inseparable from playback -- LOADING one, and CAPTURING
+   the current queue, which only fully exists in this shell. */
 let SPL={},plActive=null;
 function splLoad(){return fetch('/playlists.json',{cache:'no-store'}).then(r=>r.json())
   .then(d=>{SPL=(d&&typeof d==='object')?d:{};return SPL;}).catch(()=>SPL);}
@@ -470,6 +475,21 @@ function buildTrackList(){
 function openDrawer(){if(!curId)return;tdOpen=true;buildTrackList();tdrawer.classList.add('up');
   splLoad().then(()=>{if(tdOpen)buildTrackList();});}
 function closeDrawer(){tdOpen=false;tdrawer.classList.remove('up');}
+/* the shell has no toast, so the button itself reports back. Saves exactly the track rows on screen
+   (never the playlist rows below them), in the order shown. */
+function splSave(p){SPL=p||{};return fetch('/playlists/save',{method:'POST',
+  headers:{'Content-Type':'application/json'},body:JSON.stringify({playlists:SPL})}).then(r=>r.json());}
+$('tdsave').addEventListener('click',()=>{
+  const btn=$('tdsave'),flash=(t,ok)=>{btn.textContent=t;btn.classList.toggle('ok',!!ok);
+    setTimeout(()=>{btn.textContent='+ playlist';btn.classList.remove('ok');},1900);};
+  const ids=[...document.querySelectorAll('#tdbody .tdrow[data-id]')].map(r=>r.getAttribute('data-id'));
+  if(!ids.length){flash('nothing to save');return;}
+  const n=(prompt('Save these '+ids.length+' tracks as:',plActive?plActive+' copy':($('tdtitle').textContent||'New playlist'))||'').trim();
+  if(!n)return;
+  if(SPL[n]&&!confirm('"'+n+'" already exists with '+SPL[n].length+' track(s). Replace it?'))return;
+  const next=Object.assign({},SPL);next[n]=ids;
+  splSave(next).then(()=>{flash('saved ✓',true);if(tdOpen)buildTrackList();})
+    .catch(()=>flash('save failed'));});
 $('fptracks').addEventListener('click',()=>{tdOpen?closeDrawer():openDrawer();$('fptracks').classList.toggle('on',tdOpen);});
 $('tdclose').addEventListener('click',()=>{closeDrawer();$('fptracks').classList.remove('on');});
 
