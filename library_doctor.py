@@ -202,8 +202,12 @@ def main():
         ("stale_index",            "index entries whose file is GONE",              True,  ACTIONABLE),
         ("mixed_separator_dupes",  "duplicate keys (mixed path separators)",        True,  ACTIONABLE),
         ("nonfinite_values",       "non-finite values in index (Infinity/NaN)",     True,  ACTIONABLE),
-        ("orphan_thumbs",          "orphaned thumb-cache entries",                  True,  ACTIONABLE),
         ("zero_byte_files",        "zero-byte/unreadable media files",              False, ACTIONABLE),
+        # ADVISORY: _wiki/thumbs is a pure derived cache. An orphan costs a few KB, is regenerated
+        # on demand by Get-WorkThumb, and is swept whenever --fix runs -- so nobody has to act on
+        # it. It also drifts routinely between a Windows author and a Linux replica whose indexes
+        # aren't byte-identical, so treating it as a failure would alert nightly about nothing.
+        ("orphan_thumbs",          "orphaned thumb-cache entries",                  True,  ADVISORY),
         # ADVISORY, and deliberately so: this bucket only ever holds keys whose file WAS found
         # (anything unresolvable lands in stale_index instead), and both Resolve-AudioPath and
         # subs_for.py normalize '\' and '/' alike -- verified live on the Linux NAS, where 1336
@@ -252,12 +256,13 @@ def main():
     # The counts above are the state as FOUND. When --fix ran we must judge (and exit on) the
     # state as LEFT, or a run that successfully repaired everything still reports failure -- the
     # same cry-wolf trap this contract exists to avoid. Subtract what we actually repaired.
+    # Only count repairs to ACTIONABLE findings here -- orphan_thumbs is advisory, so its
+    # deletions were never part of the actionable total and must not be subtracted from it.
     repaired = 0
     if a.fix:
         repaired = (fixed.get("stale_index_dropped", 0)
                     + fixed.get("separator_dupes_dropped", 0)
-                    + fixed.get("nonfinite_nulled", 0)
-                    + fixed.get("orphan_thumbs_deleted", 0))
+                    + fixed.get("nonfinite_nulled", 0))
     remaining = max(0, actionable - repaired)
 
     fixable_left = (not a.fix) and any(
