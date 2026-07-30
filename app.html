@@ -50,6 +50,8 @@ body{color:var(--txt);font:14px/1.5 var(--body);-webkit-font-smoothing:antialias
 .pbtn.big{width:34px;height:34px;background:var(--pk);border-color:var(--pk);color:#fff;box-shadow:0 0 12px var(--pk3)}
 .pbtn.big:hover{background:var(--pk2);color:#fff}
 .pbtn.on{color:var(--pk2);border-color:var(--pk)}
+.pbtn.cc{font:700 10px var(--mono);width:auto;padding:0 8px;letter-spacing:.04px}
+.pbtn.cc.on{color:var(--pk);border-color:var(--pk)}
 .pbtn svg{width:15px;height:15px}.pbtn.big svg{width:17px;height:17px}
 .pseek{display:flex;align-items:center;gap:8px}
 .ptime{font:10px var(--mono);color:var(--muted);flex:0 0 auto;width:36px}
@@ -170,6 +172,40 @@ body{color:var(--txt);font:14px/1.5 var(--body);-webkit-font-smoothing:antialias
 .fps svg{width:18px;height:18px}
 .fpvol{display:flex;align-items:center;gap:12px;width:min(70%,280px);margin-top:20px}
 .fpvol .fprange{flex:1}
+
+/* ============ SUBTITLE / TRANSCRIPT DRAWER (ported from library.html) ====================
+   Synced bilingual cues for the playing work, click-to-seek, active cue tracked on timeupdate.
+   In the shell this matters more than on the standalone page: the shell is where playback lives
+   once you navigate away from /library, so without this the transcript was simply unreachable
+   during normal use. z-index sits ABOVE #fullplayer (70) so it works over theater mode too. */
+#transcript{position:fixed;top:0;right:0;width:380px;max-width:88vw;height:100vh;background:var(--bg);
+  border-left:1px solid var(--line2);z-index:75;transform:translateX(100%);
+  transition:transform .25s var(--ease);display:flex;flex-direction:column;
+  box-shadow:-18px 0 40px rgba(0,0,0,.45)}
+#transcript.up{transform:translateX(0)}
+.trhead{display:flex;align-items:center;gap:8px;padding:13px 15px;border-bottom:1px solid var(--line);
+  font:600 12px var(--mono);color:var(--txt)}
+.trhead #trttl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trhead .trx{cursor:pointer;color:var(--muted);font-size:19px;line-height:1}
+.trhead .trx:hover{color:var(--pk2)}
+.trlang{flex:none;font:700 9px var(--mono);color:var(--blue);opacity:.85}
+.trbody{flex:1;overflow-y:auto;padding:6px 0 40vh}
+.trcue{display:flex;gap:9px;padding:7px 15px;cursor:pointer;border-left:2px solid transparent;
+  transition:background .15s}
+.trcue:hover{background:var(--surf)}
+.trcue.on{background:var(--pk3);border-left-color:var(--pk)}
+.trcue .tct{flex:none;font:700 10px var(--mono);color:var(--dim);min-width:46px;padding-top:2px}
+.trcue.on .tct{color:var(--pk)}
+.trcue .tcb{flex:1;min-width:0}
+.trcue .tcj{font-size:12px;color:var(--muted);line-height:1.5}
+.trcue .tce{font-size:12.5px;color:var(--txt);line-height:1.45;margin-top:2px}
+.trcue .tck{font-size:12.5px;color:#7dd3fc;line-height:1.45;margin-top:2px}   /* ko — cyan */
+.trnone{color:var(--dim);font-size:12px;padding:24px 16px;text-align:center}
+/* the docked mini player slides clear of the open drawer instead of hiding under it */
+body.tr-open .player.up{right:calc(380px + 18px)}
+@media(max-width:820px){body.tr-open .player.up{right:12px}}
+/* on a short viewport the drawer would bury the floating video transport -- go full-width sheet */
+@media (max-height:500px){#transcript{width:min(420px,100vw)}}
 @media(min-width:900px){.fpcov{width:300px}}
 </style>
 </head><body>
@@ -189,6 +225,7 @@ body{color:var(--txt);font:14px/1.5 var(--body);-webkit-font-smoothing:antialias
         <button class="pbtn" id="ff" title="forward 15s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 4 6 5-6 5"/><path d="M19 9h-9a6 6 0 1 0 0 12h5"/></svg></button>
         <button class="pbtn" id="next" title="next"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM4 6l9 6-9 6z"/></svg></button>
         <button class="pbtn" id="shuffle" title="shuffle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 4 4 4-4 4"/><path d="M2 8h5.5a4 4 0 0 1 3.3 1.8L15 16.2A4 4 0 0 0 18.5 18H22"/><path d="m18 20 4-4-4-4"/><path d="M2 4h5.5a4 4 0 0 1 3.3 1.8L11.5 6.5"/><path d="M14.5 17.5 15 18.2"/></svg></button>
+        <button class="pbtn cc" id="ccbtn" title="subtitles / transcript">CC</button>
       </div>
     </div>
     <div class="pseek">
@@ -206,8 +243,9 @@ body{color:var(--txt);font:14px/1.5 var(--body);-webkit-font-smoothing:antialias
 <!-- full-screen player overlay -->
 <div id="fullplayer">
   <div class="fpbg" id="fpbg"></div>
-  <div class="fptop">
+  <div class="fptop" style="justify-content:space-between">
     <button class="fpx" id="fpclose" title="minimize"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
+    <button class="fpx" id="fpcc2" title="subtitles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 11h2M7 14h4M13 11h4M15 14h2"/></svg></button>
   </div>
   <div class="fpmain">
     <div class="fpcov" id="fpcov"><video id="au" preload="none" playsinline></video><img id="fpcovimg" alt=""><div class="fpvidhint" id="fpvidhint"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div></div>
@@ -238,6 +276,12 @@ body{color:var(--txt);font:14px/1.5 var(--body);-webkit-font-smoothing:antialias
   </div>
 </div>
 
+<!-- subtitle / transcript drawer -->
+<div id="transcript">
+  <div class="trhead"><span id="trttl">—</span><span class="trlang" id="trlang"></span><span class="trx" id="trx">×</span></div>
+  <div class="trbody" id="trbody"><div class="trnone">play a work, then hit CC to follow its subtitles</div></div>
+</div>
+
 <script>
 /* ================================================================================
    Independent shell player. NOT hoisted from library.html -- QUEUE there is derived
@@ -257,6 +301,7 @@ const ICON_VOL='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5
 const ICON_VOL_MUTE='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 5V4L8 9H4z"/><path d="M16 8l5 8M21 8l-5 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 
 function fmtT(s){s=Math.max(0,s|0);const m=(s/60)|0,ss=s%60;return m+':'+(ss<10?'0':'')+ss;}
+function hhmmss(s){s=s|0;const h=(s/3600)|0,m=((s%3600)/60)|0,ss=s%60;return (h?h+':':'')+((h&&m<10)?'0':'')+m+':'+(ss<10?'0':'')+ss;}
 function titleOf(w){const lang=localStorage.getItem('sasa_lang')||'en';return lang==='ja'?(w.ja||w.title):(w.title||w.ja);}
 function esc(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));}
 
@@ -315,8 +360,40 @@ function playWork(w){if(!w)return;curId=w.id;
   au.src='/audio?id='+encodeURIComponent(w.id);au.play().catch(()=>{});
   pl.classList.add('up');$('pti').textContent=titleOf(w);$('pcr').textContent=w.creator;
   $('tot').textContent=w.dur?fmtT(w.dur):'0:00';$('cur').textContent='0:00';$('seek').value=0;
-  cover($('pcov'),w);markActive();refreshFull(w);syncMediaSession(w);
+  cover($('pcov'),w);markActive();refreshFull(w);syncMediaSession(w);loadSubs(w);
 }
+/* ---- subtitle / transcript drawer (ported from library.html) ------------------------------
+   Cues come from /subs?id=, which shells out to subs_for.py -- so this needs no GPU and no
+   network: it just reads whatever .srt tiers already exist in _data/derived for that work. */
+var CUES=[],curCue=-1,ccOpen=false;
+function loadSubs(w){CUES=[];curCue=-1;$('trttl').textContent=titleOf(w);$('trlang').textContent='';
+  $('trbody').innerHTML='<div class="trnone">loading subtitles…</div>';
+  fetch('/subs?id='+encodeURIComponent(w.id)).then(r=>r.json()).then(d=>{
+    CUES=d.cues||[];$('trlang').textContent=d.lang?d.lang:'';
+    if(!CUES.length){$('trbody').innerHTML='<div class="trnone">no subtitles for this work yet</div>';return;}
+    $('trbody').innerHTML=CUES.map((c,i)=>'<div class="trcue" data-i="'+i+'" data-t="'+c.t0+'">'+
+      '<span class="tct">'+hhmmss(c.t0)+'</span><span class="tcb">'+
+      (c.ja?'<div class="tcj">'+esc(c.ja)+'</div>':'')+(c.en?'<div class="tce">'+esc(c.en)+'</div>':'')+
+      (c.ko?'<div class="tck">'+esc(c.ko)+'</div>':'')+
+      '</span></div>').join('');
+    $('trbody').querySelectorAll('.trcue').forEach(el=>el.addEventListener('click',()=>{
+      var t=parseFloat(el.dataset.t)||0;try{au.currentTime=t;}catch(e){}au.play().catch(()=>{});}));
+  }).catch(()=>{$('trbody').innerHTML='<div class="trnone">could not load subtitles</div>';});}
+function syncCue(){if(!CUES.length)return;var t=au.currentTime,lo=0,hi=CUES.length-1,idx=-1;
+  while(lo<=hi){var mid=(lo+hi)>>1;if(CUES[mid].t0<=t){idx=mid;lo=mid+1;}else hi=mid-1;}
+  if(idx===curCue)return;var rows=$('trbody').children;
+  if(curCue>=0&&rows[curCue])rows[curCue].classList.remove('on');
+  curCue=idx;
+  if(idx>=0&&rows[idx]){rows[idx].classList.add('on');if(ccOpen)rows[idx].scrollIntoView({block:'center',behavior:'smooth'});}}
+function toggleCC(){ccOpen=!ccOpen;$('transcript').classList.toggle('up',ccOpen);
+  $('ccbtn').classList.toggle('on',ccOpen);$('fpcc2').classList.toggle('on',ccOpen);
+  document.body.classList.toggle('tr-open',ccOpen);   /* slides the mini player clear of the drawer */
+  if(ccOpen&&curCue>=0){var r=$('trbody').children[curCue];if(r)r.scrollIntoView({block:'center'});}}
+$('ccbtn').addEventListener('click',toggleCC);
+$('trx').addEventListener('click',toggleCC);
+$('fpcc2').addEventListener('click',toggleCC);
+au.addEventListener('timeupdate',syncCue);
+
 function openFull(){if(!curId)return;fpOpen=true;fp.classList.add('up');ppIcon();
   if(window.fpVideoWake)window.fpVideoWake();}
 function closeFull(){fpOpen=false;fp.classList.remove('up');fp.classList.remove('fp-idle');
@@ -476,7 +553,8 @@ if('mediaSession' in navigator){
 /* ---- keyboard shortcuts (mirrors library.html's, minus CC/Escape-to-close-transcript which don't exist here) ---- */
 document.addEventListener('keydown',e=>{
   if(e.target.tagName==='INPUT')return;
-  if(e.code==='Escape'){if(fpOpen)closeFull();return;}
+  if(e.code==='Escape'){if(ccOpen){toggleCC();}else if(fpOpen){closeFull();}return;}   // CC first, then overlay
+  if(e.code==='KeyC'){e.preventDefault();toggleCC();return;}
   if(e.code==='Space'){e.preventDefault();$('pp').click();}
   else if(e.code==='ArrowRight')step(1);else if(e.code==='ArrowLeft')step(-1);
   else if(e.code==='ArrowUp'){e.preventDefault();volSet(au.volume+.05);}
