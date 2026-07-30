@@ -1357,7 +1357,8 @@ function playWork(w){if(!w)return;
   pl.classList.add('up');$('pti').textContent=titleOf(w);$('pcr').textContent=w.creator;
   $('tot').textContent=w.dur?fmtT(w.dur):'0:00';$('cur').textContent='0:00';$('seek').value=0;
   cover($('pcov'),w);markActive();loadSubs(w);loadTriggers(w);refreshFull(w);syncMediaSession(w);
-  if(tdOpen){const nk=productKey(w.id)||'__queue__';   // rebuild only if the sibling group changed; else just move the highlight
+  if(plActive&&!((plLoad()[plActive])||[]).includes(w.id))plActive=null;   // stepped outside the playlist → unpin
+  if(tdOpen){const nk=plActive?('__pl__'+plActive):(productKey(w.id)||'__queue__');   // rebuild only if the group changed; else just move the highlight
     if(nk!==tdKey)buildTrackList();
     else document.querySelectorAll('#tdbody .tdrow').forEach(r=>r.classList.toggle('on',r.getAttribute('data-id')===curId));}}
 /* ---- full-screen player overlay (DLsite-Sound style) ---------------------------------------- */
@@ -1413,7 +1414,7 @@ function closeFull(){fpOpen=false;fp.classList.remove('up');document.body.classL
 function fpPpIcon(){$('fppp').innerHTML=au.paused?ICON_PLAY:ICON_PAUSE;}
 /* ---- track drawer: a DLsite work lists its product's sibling tracks; anything else lists the
    current QUEUE. Row tap plays directly (audio never stops, drawer stays open). ---------------- */
-const tdrawer=$('trackdrawer');let tdOpen=false,tdKey=null;
+const tdrawer=$('trackdrawer');let tdOpen=false,tdKey=null,plActive=null;
 /* sibling key = the track file's PARENT FOLDER (a product can hold multiple variant subfolders —
    SEありmp3 / WAV / 効果音なし — each with its own Track01..N; siblings must be same-folder only). */
 /* split on BOTH separators: ids are authored with the indexing machine's os.sep, so a Linux-built
@@ -1421,7 +1422,9 @@ const tdrawer=$('trackdrawer');let tdOpen=false,tdKey=null;
    made every DLsite product fall back to the generic queue list instead of its sibling tracks.
    Same Windows-path-dependency class already fixed server-side in Get-Library's grouping. */
 function productKey(id){const s=String(id).split(/[\\/]/);return s.length>=4&&s[0]==='DLsite'?s.slice(0,-1).join('/'):null;}
-function trackNo(w){const m=String(w.base||'').match(/^\s*(?:track|tr)?[\s_.:：]*(\d{1,3})/i);return m?parseInt(m[1],10):null;}
+/* leading track number, but the digits must END there: a date-titled file like "2024年10月11日"
+   otherwise matched as track 202 (first 3 digits of the year) and every row showed a nonsense index. */
+function trackNo(w){const m=String(w.base||'').match(/^\s*(?:track|tr)?[\s_.:：]*(\d{1,3})(?=[\s_.\-:：)\]]|$)/i);return m?parseInt(m[1],10):null;}
 function trackSiblings(w){
   const key=productKey(w.id);
   if(!key)return null;                                   // not a DLsite product → caller uses QUEUE
@@ -1433,10 +1436,13 @@ function trackSiblings(w){
 function buildTrackList(){
   const w=QUEUE.find(x=>x.id===curId)||ALL.find(x=>x.id===curId);
   if(!w){$('tdbody').innerHTML='';return;}
-  const sibs=trackSiblings(w), list=sibs||QUEUE;
+  /* a loaded playlist wins over the album view: otherwise starting a playlist whose first item is a
+     DLsite track showed that track's whole album instead of the playlist you just picked. */
+  const sibs=plActive?null:trackSiblings(w), list=sibs||QUEUE;
   const isProduct=!!sibs;
-  tdKey=isProduct?productKey(w.id):'__queue__';
-  $('tdtitle').textContent=isProduct?(String(w.id).split(/[\\/]/)[3]||'Tracks'):'Now playing queue';
+  tdKey=plActive?('__pl__'+plActive):(isProduct?productKey(w.id):'__queue__');
+  $('tdtitle').textContent=plActive?plActive
+    :isProduct?(String(w.id).split(/[\\/]/)[3]||'Tracks'):'Now playing queue';
   $('tdcount').textContent=list.length+(list.length===1?' track':' tracks');
   $('tdbody').innerHTML=list.map((x,i)=>{
     const no=isProduct?(trackNo(x)!=null?String(trackNo(x)).padStart(2,'0'):(i+1)):(i+1);
@@ -1818,7 +1824,7 @@ function plSave(p){
   }).catch(()=>{try{PL=JSON.parse(localStorage.getItem('sasa_pl')||'{}');}catch(e){PL={};}});
 })();
 function addTo(name,w){if(!name||!w)return;const p=plLoad();p[name]=p[name]||[];if(!p[name].includes(w.id))p[name].push(w.id);plSave(p);toast('Added to "'+name+'"');}
-function playPlaylist(name){const p=plLoad(),ids=p[name]||[];const works=ids.map(id=>ALL.find(x=>x.id===id)).filter(Boolean);if(!works.length){toast('Playlist is empty');return;}QUEUE=works;playWork(works[0]);modal('plview',false);}
+function playPlaylist(name){const p=plLoad(),ids=p[name]||[];const works=ids.map(id=>ALL.find(x=>x.id===id)).filter(Boolean);if(!works.length){toast('Playlist is empty');return;}plActive=name;QUEUE=works;playWork(works[0]);modal('plview',false);}
 function plRender(){const p=plLoad(),names=Object.keys(p),el=$('pllist');
   if(!names.length){el.innerHTML='<div class="pempty">no playlists yet — open a work and tap "+ Playlist"</div>';return;}
   el.innerHTML=names.map(n=>`<div class="plrow"><span class="pn">${esc(n)}</span><span class="pc">${p[n].length}</span><button data-play="${esc(n)}" title="play">&#9654;</button><button data-del="${esc(n)}" title="delete">&#128465;</button></div>`).join('');
