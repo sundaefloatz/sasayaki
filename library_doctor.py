@@ -188,24 +188,36 @@ def main():
             fixed["orphan_thumbs_deleted"] = len(orphan_thumbs)
 
     # --- report ------------------------------------------------------------------------------
+    # EXIT-CODE CONTRACT (matters because this drives the nightly Scheduled Task's pass/fail):
+    #   ACTIONABLE  -> something is genuinely wrong and a human or --fix must act. Exits 1.
+    #   ADVISORY    -> informational; nothing is broken and there is nothing to repair. Exits 0.
+    # Getting this wrong makes the nightly job cry wolf every run and trains you to ignore it.
+    # orphan_derived_dirs / orphan_sidecars are ADVISORY on purpose: they're deliberately never
+    # auto-deleted (a derived dir may hold the only surviving subtitles for a work whose media
+    # was renamed or moved away), so their mere presence is a steady-state fact, not a fault.
+    ACTIONABLE, ADVISORY = True, False
     LABELS = [
-        ("stale_index",            "index entries whose file is GONE", True),
-        ("mixed_separator_dupes",  "duplicate keys (mixed path separators)", True),
-        ("foreign_separator_keys", "keys using the foreign path separator", True),
-        ("nonfinite_values",       "non-finite values in index (Infinity/NaN)", True),
-        ("unindexed_files",        "media on disk not yet indexed (run analyze)", False),
-        ("zero_byte_files",        "zero-byte/unreadable media files", False),
-        ("orphan_derived_dirs",    "derived dirs with no matching work", False),
-        ("orphan_thumbs",          "orphaned thumb-cache entries", True),
-        ("orphan_sidecars",        "orphaned .source.json sidecars", False),
+        ("stale_index",            "index entries whose file is GONE",              True,  ACTIONABLE),
+        ("mixed_separator_dupes",  "duplicate keys (mixed path separators)",        True,  ACTIONABLE),
+        ("foreign_separator_keys", "keys using the foreign path separator",         True,  ACTIONABLE),
+        ("nonfinite_values",       "non-finite values in index (Infinity/NaN)",     True,  ACTIONABLE),
+        ("orphan_thumbs",          "orphaned thumb-cache entries",                  True,  ACTIONABLE),
+        ("zero_byte_files",        "zero-byte/unreadable media files",              False, ACTIONABLE),
+        ("unindexed_files",        "media on disk not yet indexed (run analyze)",   False, ADVISORY),
+        ("orphan_derived_dirs",    "derived dirs with no matching work",            False, ADVISORY),
+        ("orphan_sidecars",        "orphaned .source.json sidecars",                False, ADVISORY),
     ]
     print()
-    issues = 0
-    for key, label, fixable in LABELS:
+    actionable = advisory = 0
+    for key, label, fixable, is_actionable in LABELS:
         v = findings[key]
         n = v if isinstance(v, int) else len(v)
-        issues += n if key != "unindexed_files" else 0   # unindexed is advisory, not an issue
-        tag = "FIX " if (fixable and a.fix and n) else ("fixable" if fixable and n else "")
+        if is_actionable:
+            actionable += n
+        else:
+            advisory += n
+        tag = "FIX " if (fixable and a.fix and n) else ("fixable" if fixable and n else
+                                                       ("advisory" if n and not is_actionable else ""))
         print(f"  {n:>5}  {label:48} {tag}")
         if isinstance(v, list):
             for ex in v[:EXAMPLES]:
@@ -217,6 +229,7 @@ def main():
         "checkedAt": time.strftime("%Y-%m-%d %H:%M:%S"),
         "root": root, "indexEntries": len(idx),
         "counts": {k: (v if isinstance(v, int) else len(v)) for k, v in findings.items()},
+        "actionable": actionable, "advisory": advisory,
         "fixed": fixed,
     }
     rp = os.path.join(root, "_data", "doctor_report.json")
@@ -226,13 +239,17 @@ def main():
     if fixed:
         print(f"\nfixes applied: {fixed}")
     print(f"\nreport -> {rp}")
-    healthy = issues == 0
     fixable_left = (not a.fix) and any(
         (findings[k] if isinstance(findings[k], int) else len(findings[k]))
-        for k, _label, fx in LABELS if fx)
-    print("healthy" if healthy else
-          f"{issues} issue(s) found" + ("  (run with --fix to repair the safe subset)" if fixable_left else ""))
-    sys.exit(0 if healthy else 1)
+        for k, _label, fx, _act in LABELS if fx)
+    if actionable == 0:
+        note = f" ({advisory} advisory note(s), nothing to repair)" if advisory else ""
+        print(f"library is intact{note}")
+    else:
+        print(f"{actionable} actionable issue(s)" +
+              (f", {advisory} advisory" if advisory else "") +
+              ("  (run with --fix to repair the safe subset)" if fixable_left else ""))
+    sys.exit(0 if actionable == 0 else 1)
 
 
 if __name__ == "__main__":

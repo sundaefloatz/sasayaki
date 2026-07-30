@@ -100,14 +100,22 @@ $docArgs = @('--root', $Root); if ($Fix) { $docArgs += '--fix' }
 $docCode = Step 'library_doctor (integrity)' 'library_doctor.py' $docArgs
 
 Write-Host ''
+# Exit code is what the nightly Scheduled Task surfaces as pass/fail, so it must mean
+# "a human needs to look at this" -- nothing less, nothing more:
+#   builder crash            -> fail (the rebuild itself didn't complete)
+#   doctor actionable issues -> fail (real corruption / repairable drift left over)
+#   doctor advisory only     -> PASS (steady-state notes like report-only orphan dirs)
+# Previously this returned the doctor's raw code, which was non-zero for advisories too --
+# so a perfectly healthy library reported failure every single night and the signal was noise.
 if ($rebuild -gt 0) {
-    Write-Host "$rebuild builder step(s) reported a non-zero exit -- see $log" -ForegroundColor Yellow
+    Write-Host "$rebuild builder step(s) reported a non-zero exit -- see $log" -ForegroundColor Red
 }
 if ($docCode -eq 0) {
-    Write-Host 'library is intact (doctor: healthy)' -ForegroundColor Green
+    Write-Host 'library is intact (doctor: no actionable issues)' -ForegroundColor Green
 }
 else {
-    Write-Host 'doctor found outstanding issues -- see _data/doctor_report.json' -ForegroundColor Yellow
+    Write-Host 'doctor found ACTIONABLE issues -- see _data/doctor_report.json' -ForegroundColor Yellow
 }
-Add-Content -LiteralPath $log -Value "finished=$(Get-Date -Format s) doctorExit=$docCode builderFailures=$rebuild"
-exit $docCode
+$final = if ($rebuild -gt 0 -or $docCode -ne 0) { 1 } else { 0 }
+Add-Content -LiteralPath $log -Value "finished=$(Get-Date -Format s) doctorExit=$docCode builderFailures=$rebuild exit=$final"
+exit $final
