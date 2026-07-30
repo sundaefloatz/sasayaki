@@ -465,6 +465,33 @@ html[data-embedded="1"] #trackdrawer,html[data-embedded="1"] #transcript{display
 #fullplayer[data-kind="video"] .fpbg{filter:blur(60px) brightness(.16) saturate(1.1)}
 /* a video work has no meaningful cover art to glow from -- keep the surround neutral */
 #fullplayer[data-kind="video"] .fpcov.playing{transform:none}
+/* SHORT VIEWPORTS (phone held landscape -- the actual way anyone watches video on a phone).
+   The desktop rule reserves a fixed 330px for title/seek/transport/volume, which on a 390px-tall
+   viewport leaves ~60px of picture. Here the picture takes the whole screen instead and the chrome
+   floats over it, translucent, so nothing is lost -- plus the idle-hide already fades it away
+   seconds into playback. Applies to any viewport under 500px tall, not just phones. */
+@media (max-height:500px){
+  #fullplayer[data-kind="video"]{padding:0}
+  #fullplayer[data-kind="video"] .fpmain{max-width:100vw;height:100%;justify-content:center}
+  #fullplayer[data-kind="video"] .fpcov{
+    height:100vh;width:100vw;max-width:100vw;border-radius:0;aspect-ratio:auto}
+  #fullplayer[data-kind="video"] .fpti,
+  #fullplayer[data-kind="video"] .fpcr{display:none}          /* title lives in the top bar area */
+  /* transport floats over the bottom of the picture rather than pushing it off-screen */
+  #fullplayer[data-kind="video"] .fpseek,
+  #fullplayer[data-kind="video"] .fpctrl{position:absolute;left:0;right:0;z-index:4;margin:0;
+    padding:0 16px;box-sizing:border-box}
+  #fullplayer[data-kind="video"] .fpseek{bottom:64px}
+  #fullplayer[data-kind="video"] .fpctrl{bottom:8px;gap:10px}
+  #fullplayer[data-kind="video"] .fpctrl .fpb{width:40px;height:40px}
+  #fullplayer[data-kind="video"] .fpctrl .fpb.pp{width:52px;height:52px}
+  #fullplayer[data-kind="video"] .fpvol,
+  #fullplayer[data-kind="video"] .fprow2{display:none}        /* reachable again on rotate */
+  /* legibility: the floating controls sit on arbitrary video pixels, so give them a scrim */
+  #fullplayer[data-kind="video"] .fpseek::before,
+  #fullplayer[data-kind="video"] .fpctrl::before{content:"";position:absolute;inset:-8px 0;
+    background:linear-gradient(to top,rgba(0,0,0,.72),rgba(0,0,0,0));z-index:-1;pointer-events:none}
+}
 
 /* tap/click feedback + a centred play glyph when paused mid-video */
 .fpvidhint{position:absolute;inset:0;z-index:2;display:none;align-items:center;justify-content:center;

@@ -103,6 +103,29 @@ body{color:var(--txt);font:14px/1.5 var(--body);-webkit-font-smoothing:antialias
 #fullplayer[data-kind="video"] .fpti{margin-top:18px;font-size:clamp(15px,2.4vw,20px)}
 #fullplayer[data-kind="video"] .fpbg{filter:blur(60px) brightness(.16) saturate(1.1)}
 #fullplayer[data-kind="video"] .fpcov.playing{transform:none}
+/* SHORT VIEWPORTS (phone landscape) -- ported from library.html; see that file for rationale.
+   The desktop rule reserves a fixed 330px of chrome, which on a 390px-tall viewport leaves ~60px
+   of picture. Here the picture fills the screen and the transport floats over it. */
+@media (max-height:500px){
+  #fullplayer[data-kind="video"]{padding:0}
+  #fullplayer[data-kind="video"] .fpmain{max-width:100vw;height:100%;justify-content:center}
+  #fullplayer[data-kind="video"] .fpcov{
+    height:100vh;width:100vw;max-width:100vw;border-radius:0;aspect-ratio:auto}
+  #fullplayer[data-kind="video"] .fpti,
+  #fullplayer[data-kind="video"] .fpcr{display:none}
+  #fullplayer[data-kind="video"] .fpseek,
+  #fullplayer[data-kind="video"] .fpctrl{position:absolute;left:0;right:0;z-index:4;margin:0;
+    padding:0 16px;box-sizing:border-box}
+  #fullplayer[data-kind="video"] .fpseek{bottom:64px}
+  #fullplayer[data-kind="video"] .fpctrl{bottom:8px;gap:10px}
+  #fullplayer[data-kind="video"] .fpctrl .fpb{width:40px;height:40px}
+  #fullplayer[data-kind="video"] .fpctrl .fpb.pp{width:52px;height:52px}
+  #fullplayer[data-kind="video"] .fpvol,
+  #fullplayer[data-kind="video"] .fprow2{display:none}
+  #fullplayer[data-kind="video"] .fpseek::before,
+  #fullplayer[data-kind="video"] .fpctrl::before{content:"";position:absolute;inset:-8px 0;
+    background:linear-gradient(to top,rgba(0,0,0,.72),rgba(0,0,0,0));z-index:-1;pointer-events:none}
+}
 .fpvidhint{position:absolute;inset:0;z-index:2;display:none;align-items:center;justify-content:center;
   background:rgba(0,0,0,.32);transition:opacity .2s}
 #fullplayer[data-kind="video"] .fpcov.paused .fpvidhint{display:flex}
